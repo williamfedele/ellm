@@ -3,34 +3,48 @@ import prompts
 import sys
 import argparse
 from typing import List
+from rich.console import Console
 
 client = anthropic.Anthropic()
 
 
 class LLMTool:
+    def __init__(self):
+        self.console = Console()
+
     def call_api(self, prompt: str) -> str:
-        print(prompt)
         # use sonnet for now
-        return ""
+        return f"[bold green]Example response:[/bold green]{prompt}"
 
     def explain_code(self, file_path: str):
         code = self.read_file(file_path)
+
         prompt = prompts.explainer.replace("{{CODE}}", code)
-        self.call_api(prompt)
+
+        response = self.call_api(prompt)
+
+        self.console.print(response)
 
     def optimize_code(self, file_path: str):
         code = self.read_file(file_path)
+
         prompt = prompts.optimizer.replace("{{CODE}}", code)
-        self.call_api(prompt)
+
+        response = self.call_api(prompt)
+
+        self.console.print(response)
 
     def chat(self, message: str):
         prompt = prompts.chat
         prompt = prompt.replace("{{USER_QUERY}}", message)
+
         # read conversation history here
         conversation_history = ""
         prompt = prompt.replace("{{CONVERSATION_HISTORY}}", conversation_history)
 
-        self.call_api(prompt)
+        response = self.call_api(prompt)
+
+        self.console.print(response)
 
     def read_file(self, file_path: str) -> str:
         try:
@@ -39,7 +53,7 @@ class LLMTool:
                 code += f"{f.read().strip()}\n"
             return code.strip()
         except FileNotFoundError:
-            print(f"Error: File not found: {file_path}")
+            self.console.print(f"[red]Error:[/red] File not found: {file_path}")
             sys.exit(1)
 
 

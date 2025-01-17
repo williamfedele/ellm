@@ -6,48 +6,56 @@ from typing import List
 
 client = anthropic.Anthropic()
 
-def llm_api(prompt: str) -> str:
-    print(prompt)
-    # use sonnet for now
-    return ""
 
-def explain_code(code: str):
-    prompt = prompts.explainer.replace("{{CODE}}", code)
-    llm_api(prompt)
+class LLMTool:
+    def call_api(self, prompt: str) -> str:
+        print(prompt)
+        # use sonnet for now
+        return ""
 
-def optimize_code(code: str):
-    prompt = prompts.optimizer.replace("{{CODE}}", code)
-    llm_api(prompt)
+    def explain_code(self, file_path: str):
+        code = self.read_file(file_path)
+        prompt = prompts.explainer.replace("{{CODE}}", code)
+        self.call_api(prompt)
 
+    def optimize_code(self, file_path: str):
+        code = self.read_file(file_path)
+        prompt = prompts.optimizer.replace("{{CODE}}", code)
+        self.call_api(prompt)
 
-def read_files(files: List[str]) -> str:
-    code = ""
-    for file in files:
-        with open(file) as f:
-            code += f"{f.read().strip()}\n"
-
-    return code.strip()
+    def read_file(self, file_path: str) -> str:
+        try:
+            code = ""
+            with open(file_path) as f:
+                code += f"{f.read().strip()}\n"
+            return code.strip()
+        except FileNotFoundError:
+            print(f"Error: File not found: {file_path}")
+            sys.exit(1)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "action",
-        choices=["explain", "optimize", "e", "o"],
-        help="The action to perform for the code: 'explain' (or 'e'), 'optimize' (or 'o')",
-    )
-    parser.add_argument(
-        "files", metavar="file", nargs="+", help="One or more files to process"
-    )
+    subparsers = parser.add_subparsers(dest="action", help="Available actions")
+
+    explain_parser = subparsers.add_parser("explain", help="Explain code")
+    explain_parser.add_argument("file", help="File to explain")
+
+    optimize_parser = subparsers.add_parser("optimize", help="Optimize code")
+    optimize_parser.add_argument("file", help="File to optimize")
     args = parser.parse_args()
 
-    if args.action in ["e", "explain"]:
-        code = read_files(args.files)
-        explain_code(code)
+    if not args.action:
+        parser.print_help()
+        sys.exit(1)
 
-    elif args.action in ["o", "optimize"]:
-        code = read_files(args.files)
-        optimize_code(code)
+    tool = LLMTool()
+
+    if args.action == "explain":
+        tool.explain_code(args.file)
+
+    elif args.action == "optimize":
+        tool.optimize_code(args.file)
 
 
 if __name__ == "__main__":

@@ -33,7 +33,6 @@ Remember to be thorough in your explanation, but also try to be concise and clea
 Present your explanation within <explanation> tags. You may use additional nested tags to structure your response, such as <overview>, <components>, <details>, and <summary> if you find them helpful in organizing your explanation.
 
 Begin your explanation now.
-
 """
 
 optimizer = """
@@ -84,5 +83,4 @@ Format your response as follows:
 </optimization_explanation>
 
 Remember to maintain the original functionality of the code while improving its efficiency and readability. If you believe the original code is already optimal or if there are no significant optimizations possible, explain why in the optimization explanation.
-
 """

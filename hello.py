@@ -2,25 +2,31 @@ import anthropic
 import prompts
 import sys
 import argparse
+from typing import List
 
 client = anthropic.Anthropic()
 
+def llm_api(prompt: str) -> str:
+    print(prompt)
+    # use sonnet for now
+    return ""
 
 def explain_code(code: str):
-    print(f"explaining:\n{code}")
-
+    prompt = prompts.explainer.replace("{{CODE}}", code)
+    llm_api(prompt)
 
 def optimize_code(code: str):
-    print(f"optimizing:\n{code}")
+    prompt = prompts.optimizer.replace("{{CODE}}", code)
+    llm_api(prompt)
 
 
-def read_files(files: list) -> str:
+def read_files(files: List[str]) -> str:
     code = ""
     for file in files:
         with open(file) as f:
-            code += f"{f.read()}\n"
+            code += f"{f.read().strip()}\n"
 
-    return code
+    return code.strip()
 
 
 def main():

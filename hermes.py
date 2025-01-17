@@ -23,6 +23,15 @@ class LLMTool:
         prompt = prompts.optimizer.replace("{{CODE}}", code)
         self.call_api(prompt)
 
+    def chat(self, message: str):
+        prompt = prompts.chat
+        prompt = prompt.replace("{{USER_QUERY}}", message)
+        # read conversation history here
+        conversation_history = ""
+        prompt = prompt.replace("{{CONVERSATION_HISTORY}}", conversation_history)
+
+        self.call_api(prompt)
+
     def read_file(self, file_path: str) -> str:
         try:
             code = ""
@@ -43,6 +52,10 @@ def main():
 
     optimize_parser = subparsers.add_parser("optimize", help="Optimize code")
     optimize_parser.add_argument("file", help="File to optimize")
+
+    chat_parser = subparsers.add_parser("chat", help="General chat")
+    chat_parser.add_argument("message", nargs="+", help="Chat message for the LLM")
+
     args = parser.parse_args()
 
     if not args.action:
@@ -56,6 +69,10 @@ def main():
 
     elif args.action == "optimize":
         tool.optimize_code(args.file)
+
+    elif args.action == "chat":
+        message = " ".join(args.message)
+        tool.chat(message)
 
 
 if __name__ == "__main__":

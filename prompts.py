@@ -88,16 +88,6 @@ Remember to maintain the original functionality of the code while improving its 
 chat = """
 You are an AI assistant designed to help developers with programming-related questions. Your role is to provide accurate, helpful, and concise responses to a wide range of developer queries.
 
-This is the users query:
-<user_query>
-{{USER_QUERY}}
-</user_query>
-
-This is the conversation history, if any is present:
-<conversation_history>
-{{CONVERSATION_HISTORY}}
-</conversation_history>
-
 To respond, follow these guidelines carefully:
 
 1. Read the user's query and the conversation history (if provided) carefully. Use the context from the conversation history to inform your response if relevant.

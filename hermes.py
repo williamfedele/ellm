@@ -2,7 +2,9 @@ import anthropic
 import prompts
 import sys
 import argparse
-from typing import List
+import configparser
+from pathlib import Path
+from typing import List, Dict
 from rich.console import Console
 
 client = anthropic.Anthropic()
@@ -11,6 +13,28 @@ client = anthropic.Anthropic()
 class LLMTool:
     def __init__(self):
         self.console = Console()
+        self.config_path = Path.home() / ".hermes" / "config.ini"
+        self.config = self._load_config()
+
+    def _load_config(self):
+        config = configparser.ConfigParser()
+
+        if self.config_path.exists():
+            config.read(self.config_path)
+        else:
+            config["DEFAULTS"] = {"api_key": "", "model": "", "max_tokens": "1000"}
+            self.config_path.parent.mkdir(exist_ok=True)
+            with open(self.config_path, "w") as f:
+                config.write(f)
+
+        return config
+
+    def update_config(self, config_opts: Dict[str, str]) -> None:
+        for k, v in config_opts.items():
+            self.config["DEFAULTS"][k] = v
+
+        with open(self.config_path, "w") as f:
+            self.config.write(f)
 
     def call_api(self, prompt: str) -> str:
         # use sonnet for now
@@ -61,6 +85,11 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="action", help="Available actions")
 
+    config_parser = subparsers.add_parser("config", help="Configure settings")
+    config_parser.add_argument("--api-key", help="Set API key for your provider")
+    config_parser.add_argument("--model", help="Set your model version")
+    config_parser.add_argument("--max-tokens", help="Set max tokens")
+
     explain_parser = subparsers.add_parser("explain", help="Explain code")
     explain_parser.add_argument("file", help="File to explain")
 
@@ -87,6 +116,13 @@ def main():
     elif args.action == "chat":
         message = " ".join(args.message)
         tool.chat(message)
+
+    elif args.action == "config":
+        args_dict = {
+            key: value for key, value in vars(args).items() if value is not None
+        }
+        del args_dict["action"]
+        tool.update_config(args_dict)
 
 
 if __name__ == "__main__":

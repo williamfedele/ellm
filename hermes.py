@@ -19,11 +19,14 @@ history_path.mkdir(parents=True, exist_ok=True)
 
 
 class Chat:
-    def __init__(self, id: str = None):
+    def __init__(self, id: str = None, sys_prompt: str = None):
         self.id = id or str(uuid4())
         self.history_file = history_path / f"{self.id}.json"
         self.history: List[Dict] = []
-        self.load_history()
+        if id:
+            self.load_history()
+        else:
+            self.history.append({"role": "system", "content": sys_prompt})
 
     def load_history(self) -> None:
         if self.history_file.exists():
@@ -79,11 +82,31 @@ class ChatCLI(cmd.Cmd):
             self.sessions[convo_id] = Chat(convo_id)
 
     def do_new(self, arg):
-        "Start a new chat"
-        session = Chat()
+        "Start a new chat: new <explain | optimize | chat (default)>"
+        args = arg.split()
+        if len(args) > 1:
+            self.console.print(f"[red]Too many arguments provided: [/red]{arg}")
+            return
+        if not args:
+            session = Chat(sys_prompt=prompts.chat)
+        else:
+            if args[0] not in ["explain", "e", "optimize", "o", "chat", "c"]:
+                self.console.print(
+                    f"[red]Please provide a valid system prompt specifier. Type 'help new' for more information"
+                )
+                return
+            if args[0] in ["explain", "e"]:
+                session = Chat(sys_prompt=prompts.explain)
+            elif args[0] in ["optimize", "o"]:
+                session = Chat(sys_prompt=prompts.optimize)
+            else:
+                session = Chat(sys_prompt=prompts.chat)
+
         self.sessions[session.id] = session
         self.current_session = session
-        self.console.print(f"Created new session with ID: {session.id}")
+        self.console.print(
+            f"[bold green]Created new session with ID[/bold green]: [green]{session.id}[/green]"
+        )
 
     def do_list(self, arg):
         "List all chats"
@@ -100,23 +123,33 @@ class ChatCLI(cmd.Cmd):
             #    ).strftime("%Y-%m-%d %H:%M:%S")
             # print(f"- {session_id}: {msg_count} messages, last updated: {last_updated}{is_current}")
 
-            self.console.print(f"- [green]{session_id}[/green]: {msg_count} messages {is_current}")
+            self.console.print(
+                f"- [green]{session_id}[/green]: {msg_count} messages {is_current}"
+            )
 
     def do_switch(self, session_id):
-        "Switch to a different chat: switch <session_id>. Unique ID prefix can be provided."
+        "Switch to a different chat: switch <session_id>"
         if not session_id:
             self.console.print("[red]Please provide a valid chat ID[/red]")
             return
 
-        matching_sessions = [s for s in self.sessions.keys() if s.startswith(session_id)]
+        matching_sessions = [
+            s for s in self.sessions.keys() if s.startswith(session_id)
+        ]
 
         if len(matching_sessions) == 0:
-            self.console.print(f"[red]No session found starting with {session_id}[/red]")
+            self.console.print(
+                f"[red]No session found starting with {session_id}[/red]"
+            )
         elif len(matching_sessions) > 1:
-            self.console.print(f"[red]Multiple sessions found starting with {session_id}[/red]")
+            self.console.print(
+                f"[red]Multiple sessions found starting with {session_id}[/red]"
+            )
         else:
             self.current_session = self.sessions[matching_sessions[0]]
-            self.console.print(f"[bold green]Switched to session {self.current_session.id}[/bold green]")
+            self.console.print(
+                f"[bold green]Switched to session {self.current_session.id}[/bold green]"
+            )
             self.do_history("")
 
     def do_send(self, message):
@@ -151,10 +184,14 @@ class ChatCLI(cmd.Cmd):
 
         self.console.print("\n[bold blue]Message history:[/bold blue]")
         for msg in self.current_session.history:
-            if msg['role'].upper() == "USER":
-                self.console.print(f"\n[[yellow]{msg['role'].upper()}[/yellow]]: {msg['content']}")
-            elif msg['role'].upper() == "ASSISTANT":
-                self.console.print(f"\n[[orange1]{msg['role'].upper()}[/orange1]]: {msg['content']}")
+            if msg["role"].upper() == "USER":
+                self.console.print(
+                    f"\n[[yellow]{msg['role'].upper()}[/yellow]]: {msg['content']}"
+                )
+            elif msg["role"].upper() == "ASSISTANT":
+                self.console.print(
+                    f"\n[[orange1]{msg['role'].upper()}[/orange1]]: {msg['content']}"
+                )
             else:
                 # Don't print system messages
                 pass

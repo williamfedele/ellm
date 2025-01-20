@@ -1,11 +1,5 @@
-explainer = """
+explain = """
 You are tasked with explaining a piece of code to someone who may not be familiar with its functionality or purpose. Your goal is to provide a clear, concise, and comprehensive explanation of the code's structure, purpose, and functionality.
-
-Here is the code you need to explain:
-
-<code>
-{{CODE}}
-</code>
 
 To explain this code effectively, follow these steps:
 
@@ -32,17 +26,12 @@ Remember to be thorough in your explanation, but also try to be concise and clea
 
 Present your explanation within <explanation> tags. You may use additional nested tags to structure your response, such as <overview>, <components>, <details>, and <summary> if you find them helpful in organizing your explanation.
 
-Begin your explanation now.
 """
 
-optimizer = """
-You are tasked with optimizing a piece of code. Your goal is to improve its efficiency, readability, and overall performance without changing its core functionality. Here's the code you need to optimize:
+optimize = """
+You are tasked with optimizing a piece of code. Your goal is to improve its efficiency, readability, and overall performance without changing its core functionality.
 
-<code>
-{{CODE}}
-</code>
-
-To optimize this code, follow these steps:
+To optimize the code, follow these steps:
 
 1. Analyze the code:
    - Identify any inefficient algorithms or data structures

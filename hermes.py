@@ -40,8 +40,12 @@ class Chat:
 
 
 class ChatCLI(cmd.Cmd):
+    intro = "HERMES\nType help of ? to list commands.\n"
+    prompt = "> "
+
     def __init__(self):
         super().__init__()
+        self.console = Console()
         self.config_path = Path.home() / ".hermes" / "config.ini"
         self.config = self._load_config()
         self.sessions: Dict[str, Chat] = {}
@@ -79,7 +83,7 @@ class ChatCLI(cmd.Cmd):
         session = Chat()
         self.sessions[session.id] = session
         self.current_session = session
-        print(f"Created new session with ID: {session.id}")
+        self.console.print(f"Created new session with ID: {session.id}")
 
     def do_list(self, arg):
         "List all chats"
@@ -87,7 +91,7 @@ class ChatCLI(cmd.Cmd):
             print("No chats yet.")
             return
 
-        print("Your chats:")
+        self.console.print("[bold blue]Your chats:[/bold blue]")
         for session_id, session in self.sessions.items():
             msg_count = len(session.history)
             is_current = " (current)" if session == self.current_session else ""
@@ -96,56 +100,69 @@ class ChatCLI(cmd.Cmd):
             #    ).strftime("%Y-%m-%d %H:%M:%S")
             # print(f"- {session_id}: {msg_count} messages, last updated: {last_updated}{is_current}")
 
-            print(f"- {session_id}: {msg_count} messages {is_current}")
+            self.console.print(f"- [green]{session_id}[/green]: {msg_count} messages {is_current}")
 
     def do_switch(self, session_id):
-        "Switch to a different chat: switch <session_id>"
-        if not session_id or session_id not in self.sessions:
-            print("Please provide a valid chat ID")
+        "Switch to a different chat: switch <session_id>. Unique ID prefix can be provided."
+        if not session_id:
+            self.console.print("[red]Please provide a valid chat ID[/red]")
             return
 
-        self.current_session = self.sessions[session_id]
-        print(f"Switched to session {self.current_session.id}")
-        self.do_history("")
+        matching_sessions = [s for s in self.sessions.keys() if s.startswith(session_id)]
+
+        if len(matching_sessions) == 0:
+            self.console.print(f"[red]No session found starting with {session_id}[/red]")
+        elif len(matching_sessions) > 1:
+            self.console.print(f"[red]Multiple sessions found starting with {session_id}[/red]")
+        else:
+            self.current_session = self.sessions[matching_sessions[0]]
+            self.console.print(f"[bold green]Switched to session {self.current_session.id}[/bold green]")
+            self.do_history("")
 
     def do_send(self, message):
         "Send a message in the current session: send <message>"
         if not self.current_session:
-            print(
-                "You're not in a session. Start one with 'new' or switch to an existing one with 'switch'"
+            self.console.print(
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
             )
             return
 
         if not message:
-            print("Provide a message to send")
+            self.console.print("[red]Provide a message to send[/red]")
             return
 
         self.current_session.add_message("user", message)
         # call LLM
         response = "example assistant response"
-        print(f"\n{response}\n")
+        self.console.print(f"\n{response}\n")
 
         self.current_session.add_message("assistant", response)
 
     def do_history(self, arg):
         "Show message history for the active session"
         if not self.current_session:
-            print(
-                "You're not in a session. Start one with 'new' or switch to an existing one with 'switch'"
+            self.console.print(
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
             )
             return
 
         if not self.current_session.history:
-            print("Current session is empty")
+            self.console.print("[red]Current session is empty[/red]")
 
-        print("\nMessage history:")
+        self.console.print("\n[bold blue]Message history:[/bold blue]")
         for msg in self.current_session.history:
-            print(f"\n[{msg['role'].upper()}]: {msg['content']}")
-        print()
+            if msg['role'].upper() == "USER":
+                self.console.print(f"\n[[yellow]{msg['role'].upper()}[/yellow]]: {msg['content']}")
+            elif msg['role'].upper() == "ASSISTANT":
+                self.console.print(f"\n[[orange1]{msg['role'].upper()}[/orange1]]: {msg['content']}")
+            else:
+                # Don't print system messages
+                pass
+        self.console.print()
 
     def do_quit(self, arg):
         "Exit the chat CLI"
-        print("Goodbye!")
+        self.console.print("[green]Goodbye![/green]")
         return True
 
 

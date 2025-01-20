@@ -1,10 +1,11 @@
+import cmd
 import anthropic
 import prompts
 import sys
 import json
 import argparse
 import configparser
-import uuid
+from uuid import uuid4
 import datetime
 import os
 from pathlib import Path
@@ -13,6 +14,112 @@ from rich.console import Console
 
 client = anthropic.Anthropic()
 
+history_path = Path.home() / ".hermes" / "conversations"
+history_path.mkdir(parents=True, exist_ok=True)
+
+class Chat:
+    def __init__(self, id: str = None):
+        self.id = id or str(uuid4())
+        self.history_file = history_path / f"{self.id}.json"
+        self.history: List[Dict] = []
+        self.load_history()
+
+    def load_history(self) -> None:
+        if self.history_file.exists():
+            with open(self.history_file) as f:
+                self.history = json.load(f)
+
+    def save_history(self) -> None:
+        with open(self.history_file, 'w') as f:
+            json.dump(self.history, f, indent=2)
+
+    def add_message(self, role: str, content: str) -> None:
+        self.history.append({"role": role, "content": content})
+        self.save_history()
+
+class ChatCLI(cmd.Cmd):
+    def __init__(self):
+        super().__init__()
+        #self.config_path = Path.home() / ".hermes" / "config.ini"
+        #self.config = self._load_config()
+        self.sessions: Dict[str, Chat] = {}
+        self.current_session = None
+        self.load_sessions()
+        
+    def load_sessions(self) -> None:
+        conversations = list(history_path.glob("*.json"))
+        for convo in conversations:
+            convo_id = convo.stem
+            self.sessions[convo_id] = Chat(convo_id)
+
+    def do_new(self, arg):
+        'Start a new chat'
+        session = Chat()
+        self.sessions[session.id] = session
+        self.current_session = session
+        print(f"Created new session with ID: {session.id}")
+
+    def do_list(self, arg):
+        'List all chats'
+        if not self.sessions:
+            print("No chats yet.")
+            return
+
+        print("Your chats:")
+        for session_id, session in self.sessions.items():
+            msg_count = len(session.history)
+            is_current = " (current)" if session == self.current_session else ""
+            #last_updated = datetime.datetime.fromtimestamp(
+            #        os.path.getmtime(convo_file)
+            #    ).strftime("%Y-%m-%d %H:%M:%S")
+            #print(f"- {session_id}: {msg_count} messages, last updated: {last_updated}{is_current}")
+
+            print(f"- {session_id}: {msg_count} messages {is_current}")
+    def do_switch(self, session_id):
+        'Switch to a different chat: switch <session_id>'
+        if not session_id or session_id not in self.sessions:
+            print("Please provide a valid chat ID")
+            return
+
+        self.current_session = self.sessions[session_id]
+        print(f"Switched to session {self.current_session.id}")
+        self.do_history("")
+
+    def do_send(self, message):
+        'Send a message in the current session: send <message>'
+        if not self.current_session:
+            print("You're not in a session. Start one with 'new' or switch to an existing one with 'switch'")
+            return
+
+        if not message:
+            print("Provide a message to send")
+            return
+
+        self.current_session.add_message("user", message)
+        # call LLM
+        response = "example assistant response"
+        print(f"\n{response}\n")
+
+        self.current_session.add_message("assistant", response)
+
+    def do_history(self, arg):
+        'Show message history for the active session'
+        if not self.current_session:
+            print("You're not in a session. Start one with 'new' or switch to an existing one with 'switch'")
+            return
+
+        if not self.current_session.history:
+            print("Current session is empty")
+
+        print("\nMessage history:")
+        for msg in self.current_session.history:
+            print(f"\n[{msg['role'].upper()}]: {msg['content']}")
+        print()
+
+    def do_quit(self, arg):
+        'Exit the chat CLI'
+        print("Goodbye!")
+        return True
 
 class LLMTool:
     def __init__(self):
@@ -132,7 +239,7 @@ class LLMTool:
             sys.exit(1)
 
 
-def main():
+def main_deprecated():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="action", help="Available actions")
 
@@ -141,14 +248,15 @@ def main():
     config_parser.add_argument("--model", help="Set your model version")
     config_parser.add_argument("--max-tokens", help="Set max tokens")
 
-    explain_parser = subparsers.add_parser("explain", help="Explain code")
-    explain_parser.add_argument("file", help="File to explain")
+    #explain_parser = subparsers.add_parser("explain", help="Explain code")
+    #explain_parser.add_argument("file", help="File to explain")
 
-    optimize_parser = subparsers.add_parser("optimize", help="Optimize code")
-    optimize_parser.add_argument("file", help="File to optimize")
+    #optimize_parser = subparsers.add_parser("optimize", help="Optimize code")
+    #optimize_parser.add_argument("file", help="File to optimize")
 
     chat_parser = subparsers.add_parser("chat", help="General chat")
     chat_parser.add_argument("message", nargs="+", help="Chat message for the LLM")
+    chat_parser.add_argument("file", help="File for the LLM")
     chat_parser.add_argument(
         "--convo_id", help="Conversation ID to continue a conversation"
     )
@@ -163,13 +271,7 @@ def main():
 
     tool = LLMTool()
 
-    if args.action == "explain":
-        tool.explain_code(args.file)
-
-    elif args.action == "optimize":
-        tool.optimize_code(args.file)
-
-    elif args.action == "chat":
+    if args.action == "chat":
         message = " ".join(args.message)
         if args.convo_id:
             tool.chat(message, args.convo_id)
@@ -186,6 +288,22 @@ def main():
         del args_dict["action"]
         tool.update_config(args_dict)
 
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="action", help="Available actions")
+
+    config_parser = subparsers.add_parser("config", help="Configure settings")
+    config_parser.add_argument("--api-key", help="Set API key for your provider")
+    config_parser.add_argument("--model", help="Set your model version")
+    config_parser.add_argument("--max-tokens", help="Set max tokens")
+
+    args = parser.parse_args()
+    if args.action == "config":
+        #modify config
+        print("modified config")
+        pass
+    else:
+        ChatCLI().cmdloop()
 
 if __name__ == "__main__":
     main()

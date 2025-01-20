@@ -17,6 +17,7 @@ client = anthropic.Anthropic()
 history_path = Path.home() / ".hermes" / "conversations"
 history_path.mkdir(parents=True, exist_ok=True)
 
+
 class Chat:
     def __init__(self, id: str = None):
         self.id = id or str(uuid4())
@@ -30,22 +31,43 @@ class Chat:
                 self.history = json.load(f)
 
     def save_history(self) -> None:
-        with open(self.history_file, 'w') as f:
+        with open(self.history_file, "w") as f:
             json.dump(self.history, f, indent=2)
 
     def add_message(self, role: str, content: str) -> None:
         self.history.append({"role": role, "content": content})
         self.save_history()
 
+
 class ChatCLI(cmd.Cmd):
     def __init__(self):
         super().__init__()
-        #self.config_path = Path.home() / ".hermes" / "config.ini"
-        #self.config = self._load_config()
+        self.config_path = Path.home() / ".hermes" / "config.ini"
+        self.config = self._load_config()
         self.sessions: Dict[str, Chat] = {}
         self.current_session = None
         self.load_sessions()
-        
+
+    def _load_config(self) -> None:
+        config = configparser.ConfigParser()
+
+        if self.config_path.exists():
+            config.read(self.config_path)
+        else:
+            config["DEFAULTS"] = {"api_key": "", "model": "", "max_tokens": "1000"}
+            self.config_path.parent.mkdir(exist_ok=True)
+            with open(self.config_path, "w") as f:
+                config.write(f)
+
+        return config
+
+    def save_config(self, config_opts: Dict[str, str]) -> None:
+        for k, v in config_opts.items():
+            self.config["DEFAULTS"][k] = v
+
+        with open(self.config_path, "w") as f:
+            self.config.write(f)
+
     def load_sessions(self) -> None:
         conversations = list(history_path.glob("*.json"))
         for convo in conversations:
@@ -53,14 +75,14 @@ class ChatCLI(cmd.Cmd):
             self.sessions[convo_id] = Chat(convo_id)
 
     def do_new(self, arg):
-        'Start a new chat'
+        "Start a new chat"
         session = Chat()
         self.sessions[session.id] = session
         self.current_session = session
         print(f"Created new session with ID: {session.id}")
 
     def do_list(self, arg):
-        'List all chats'
+        "List all chats"
         if not self.sessions:
             print("No chats yet.")
             return
@@ -69,14 +91,15 @@ class ChatCLI(cmd.Cmd):
         for session_id, session in self.sessions.items():
             msg_count = len(session.history)
             is_current = " (current)" if session == self.current_session else ""
-            #last_updated = datetime.datetime.fromtimestamp(
+            # last_updated = datetime.datetime.fromtimestamp(
             #        os.path.getmtime(convo_file)
             #    ).strftime("%Y-%m-%d %H:%M:%S")
-            #print(f"- {session_id}: {msg_count} messages, last updated: {last_updated}{is_current}")
+            # print(f"- {session_id}: {msg_count} messages, last updated: {last_updated}{is_current}")
 
             print(f"- {session_id}: {msg_count} messages {is_current}")
+
     def do_switch(self, session_id):
-        'Switch to a different chat: switch <session_id>'
+        "Switch to a different chat: switch <session_id>"
         if not session_id or session_id not in self.sessions:
             print("Please provide a valid chat ID")
             return
@@ -86,9 +109,11 @@ class ChatCLI(cmd.Cmd):
         self.do_history("")
 
     def do_send(self, message):
-        'Send a message in the current session: send <message>'
+        "Send a message in the current session: send <message>"
         if not self.current_session:
-            print("You're not in a session. Start one with 'new' or switch to an existing one with 'switch'")
+            print(
+                "You're not in a session. Start one with 'new' or switch to an existing one with 'switch'"
+            )
             return
 
         if not message:
@@ -103,9 +128,11 @@ class ChatCLI(cmd.Cmd):
         self.current_session.add_message("assistant", response)
 
     def do_history(self, arg):
-        'Show message history for the active session'
+        "Show message history for the active session"
         if not self.current_session:
-            print("You're not in a session. Start one with 'new' or switch to an existing one with 'switch'")
+            print(
+                "You're not in a session. Start one with 'new' or switch to an existing one with 'switch'"
+            )
             return
 
         if not self.current_session.history:
@@ -117,9 +144,10 @@ class ChatCLI(cmd.Cmd):
         print()
 
     def do_quit(self, arg):
-        'Exit the chat CLI'
+        "Exit the chat CLI"
         print("Goodbye!")
         return True
+
 
 class LLMTool:
     def __init__(self):
@@ -248,11 +276,11 @@ def main_deprecated():
     config_parser.add_argument("--model", help="Set your model version")
     config_parser.add_argument("--max-tokens", help="Set max tokens")
 
-    #explain_parser = subparsers.add_parser("explain", help="Explain code")
-    #explain_parser.add_argument("file", help="File to explain")
+    # explain_parser = subparsers.add_parser("explain", help="Explain code")
+    # explain_parser.add_argument("file", help="File to explain")
 
-    #optimize_parser = subparsers.add_parser("optimize", help="Optimize code")
-    #optimize_parser.add_argument("file", help="File to optimize")
+    # optimize_parser = subparsers.add_parser("optimize", help="Optimize code")
+    # optimize_parser.add_argument("file", help="File to optimize")
 
     chat_parser = subparsers.add_parser("chat", help="General chat")
     chat_parser.add_argument("message", nargs="+", help="Chat message for the LLM")
@@ -288,6 +316,7 @@ def main_deprecated():
         del args_dict["action"]
         tool.update_config(args_dict)
 
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="action", help="Available actions")
@@ -299,11 +328,16 @@ def main():
 
     args = parser.parse_args()
     if args.action == "config":
-        #modify config
+        args_dict = {
+            key: value for key, value in vars(args).items() if value is not None
+        }
+        del args_dict["action"]
+        ChatCLI().save_config(args_dict)
         print("modified config")
         pass
     else:
         ChatCLI().cmdloop()
+
 
 if __name__ == "__main__":
     main()

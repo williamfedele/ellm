@@ -29,7 +29,7 @@ class ChatCLI(cmd.Cmd):
         self.config_path = Path.home() / ".hermes" / "config.ini"
         self.config = self._load_config()
         self.sessions: Dict[str, Session] = {}
-        self.current_session = None
+        self.current_session: Optional[Session] = None
         self.load_sessions()
 
     def _load_config(self) -> None:
@@ -64,9 +64,23 @@ class ChatCLI(cmd.Cmd):
         session = Session()
         self.sessions[session.id] = session
         self.current_session = session
-        self.console.print(
-            f"[bold green]Created new session with ID[/bold green]: [green]{session.id}[/green]"
-        )
+        self.console.print(f"[bold green]Created new session:[/] {session.id}")
+
+    def do_title(self, arg):
+        "Set/Get the title for the current session"
+        if not self.current_session:
+            self.console.print(
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+            )
+            return
+
+        if not arg:
+            self.console.print(f"Current title: {self.current_session.title}")
+            return
+
+        self.current_session.title = arg
+        self.current_session.save_history()
+        self.console.print(f"[bold green]Set title to:[/bold green] {arg}")
 
     def do_list(self, arg):
         "List all chats"
@@ -82,10 +96,14 @@ class ChatCLI(cmd.Cmd):
             #        os.path.getmtime(convo_file)
             #    ).strftime("%Y-%m-%d %H:%M:%S")
             # print(f"- {session_id}: {msg_count} messages, last updated: {last_updated}{is_current}")
-
+            title = f"{session.title} " if session.title else "(Untitled) "
+            self.console.print(f"\n{title}{session_id} {is_current}")
+            self.console.print(f"Created at: {session.created_at}")
             self.console.print(
-                f"- [green]{session_id}[/green]: {msg_count} messages {is_current}"
+                f"Message: {len(session.history)}, tokens: {session.get_token_count()}"
             )
+
+        self.console.print()
 
     def do_switch(self, session_id):
         "Switch to a different chat: switch <session_id>"
@@ -108,7 +126,7 @@ class ChatCLI(cmd.Cmd):
         else:
             self.current_session = self.sessions[matching_sessions[0]]
             self.console.print(
-                f"[bold green]Switched to session {self.current_session.id}[/bold green]"
+                f"[bold green]Switched to session:[/] {self.current_session.id}"
             )
             self.do_history("")
 
@@ -156,6 +174,18 @@ class ChatCLI(cmd.Cmd):
                 # Don't print system messages
                 pass
         self.console.print()
+
+    def do_tokens(self, arg):
+        "Show token usage for the current session"
+        if not self.current_session:
+            self.console.print(
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+            )
+            return
+
+        self.console.print(
+            f"Total session tokens: {self.current_session.get_token_count()}"
+        )
 
     def do_quit(self, arg):
         "Exit the chat CLI"

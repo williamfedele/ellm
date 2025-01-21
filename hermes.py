@@ -144,13 +144,13 @@ class ChatCLI(cmd.Cmd):
 
         self.console.print("\n[bold blue]Message history:[/bold blue]")
         for msg in self.current_session.history:
-            if msg["role"].upper() == "USER":
+            if msg.role.upper() == "USER":
                 self.console.print(
-                    f"\n[[yellow]{msg['role'].upper()}[/yellow]]: {msg['content']}"
+                    f"\n[[yellow]{msg.role.upper()}[/yellow]]: {msg.content}"
                 )
-            elif msg["role"].upper() == "ASSISTANT":
+            elif msg.role.upper() == "ASSISTANT":
                 self.console.print(
-                    f"\n[[orange1]{msg['role'].upper()}[/orange1]]: {msg['content']}"
+                    f"\n[[orange1]{msg.role.upper()}[/orange1]]: {msg.content}"
                 )
             else:
                 # Don't print system messages

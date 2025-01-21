@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 from typing import List, Dict, Optional
 from rich.console import Console
+from rich.table import Table
 from session import Session
 
 client = anthropic.Anthropic()
@@ -88,22 +89,22 @@ class ChatCLI(cmd.Cmd):
             print("No chats yet.")
             return
 
-        self.console.print("[bold blue]Your chats:[/bold blue]")
-        for session_id, session in self.sessions.items():
-            msg_count = len(session.history)
-            is_current = " (current)" if session == self.current_session else ""
-            # last_updated = datetime.datetime.fromtimestamp(
-            #        os.path.getmtime(convo_file)
-            #    ).strftime("%Y-%m-%d %H:%M:%S")
-            # print(f"- {session_id}: {msg_count} messages, last updated: {last_updated}{is_current}")
-            title = f"{session.title} " if session.title else "(Untitled) "
-            self.console.print(f"\n{title}{session_id} {is_current}")
-            self.console.print(f"Created at: {session.created_at}")
-            self.console.print(
-                f"Message: {len(session.history)}, tokens: {session.get_token_count()}"
-            )
+        table = Table(title="All Chats:")
+        table.add_column("ID")
+        table.add_column("Title")
+        table.add_column("Created At")
+        table.add_column("Messages", justify="right")
+        table.add_column("Tokens", justify="right")
 
-        self.console.print()
+        for session_id, session in self.sessions.items():
+            is_current = " (current)" if session == self.current_session else ""
+
+            title = f"{session.title} " if session.title else "(Untitled) "
+            msg_count = str(len(session.history))
+            token_count = str(session.get_token_count())
+            table.add_row(session_id, title, session.created_at, msg_count, token_count)
+
+        self.console.print(table)
 
     def do_switch(self, session_id):
         "Switch to a different chat: switch <session_id>"

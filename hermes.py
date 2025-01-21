@@ -1,23 +1,18 @@
 import cmd
 import anthropic
 import prompts
-import sys
 import json
 import argparse
 import configparser
-from uuid import uuid4
-import datetime
 import os
 from pathlib import Path
 from typing import List, Dict, Optional
 from rich.console import Console
 from rich.table import Table
 from session import Session
+from constants import CONFIG_PATH, HISTORY_PATH
 
 client = anthropic.Anthropic()
-
-history_path = Path.home() / ".hermes" / "conversations"
-history_path.mkdir(parents=True, exist_ok=True)
 
 
 class ChatCLI(cmd.Cmd):
@@ -27,34 +22,47 @@ class ChatCLI(cmd.Cmd):
     def __init__(self):
         super().__init__()
         self.console = Console()
-        self.config_path = Path.home() / ".hermes" / "config.ini"
         self.config = self._load_config()
         self.sessions: Dict[str, Session] = {}
         self.current_session: Optional[Session] = None
         self.load_sessions()
 
-    def _load_config(self) -> None:
+    def _load_config(self) -> configparser.ConfigParser:
         config = configparser.ConfigParser()
 
-        if self.config_path.exists():
-            config.read(self.config_path)
+        if CONFIG_PATH.exists():
+            config.read(CONFIG_PATH)
         else:
-            config["DEFAULTS"] = {"api_key": "", "model": "", "max_tokens": "1000"}
-            self.config_path.parent.mkdir(exist_ok=True)
-            with open(self.config_path, "w") as f:
+            config["DEFAULT"] = {
+                "api_key": "NOTSET",
+                "model": "NOTSET",
+                "max_tokens": "1000",
+            }
+            CONFIG_PATH.parent.mkdir(exist_ok=True)
+            with open(CONFIG_PATH, "w") as f:
                 config.write(f)
 
         return config
 
-    def save_config(self, config_opts: Dict[str, str]) -> None:
-        for k, v in config_opts.items():
-            self.config["DEFAULTS"][k] = v
+    def save_config(
+        self, config_opts: Dict[str, str], settings_name: str = "DEFAULT"
+    ) -> None:
+        if settings_name not in self.config:
+            self.config[settings_name] = {
+                "api_key": "NOTSET",
+                "model": "NOTSET",
+                "max_tokens": "1000",
+            }
 
-        with open(self.config_path, "w") as f:
+        for k, v in config_opts.items():
+            self.config[settings_name][k] = v
+
+        CONFIG_PATH.parent.mkdir(exist_ok=True)
+        with open(CONFIG_PATH, "w") as f:
             self.config.write(f)
 
     def load_sessions(self) -> None:
-        conversations = list(history_path.glob("*.json"))
+        conversations = list(HISTORY_PATH.glob("*.json"))
         for convo in conversations:
             convo_id = convo.stem
             self.sessions[convo_id] = Session(convo_id)
@@ -83,6 +91,40 @@ class ChatCLI(cmd.Cmd):
         self.current_session.save_history()
         self.console.print(f"[bold green]Set title to:[/bold green] {arg}")
 
+    def do_settings(self, arg):
+        "Change the settings for the current session: settings <settings_name>"
+        if not self.current_session:
+            self.console.print(
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+            )
+            return
+
+        if not arg:
+            settings = self.current_session.settings
+            # Conversation settings might not exist if the config was modified manually
+            if settings not in self.config:
+                self.console.print(
+                    f"[red]Current sessions settings do not exist: {settings}[/]"
+                )
+                return
+
+            model_name = self.config[settings]["model"]
+            max_tokens = self.config[settings]["max_tokens"]
+            self.console.print(
+                f"({settings}) model = {model_name}, max_tokens = {max_tokens}"
+            )
+            return
+
+        if arg not in self.config:
+            self.console.print(
+                f"[red]Invalid settings name. Choose from: {', '.join(self.config.keys())}[/]"
+            )
+            return
+
+        self.current_session.settings = arg
+        self.current_session.save_history()
+        self.console.print(f"[bold green]Switched to settings: {arg}[/]")
+
     def do_list(self, arg):
         "List all chats"
         if not self.sessions:
@@ -93,6 +135,7 @@ class ChatCLI(cmd.Cmd):
         table.add_column("ID")
         table.add_column("Title")
         table.add_column("Created At")
+        table.add_column("Settings")
         table.add_column("Messages", justify="right")
         table.add_column("Tokens", justify="right")
 
@@ -102,7 +145,14 @@ class ChatCLI(cmd.Cmd):
             title = f"{session.title} " if session.title else "(Untitled) "
             msg_count = str(len(session.history))
             token_count = str(session.get_token_count())
-            table.add_row(session_id, title, session.created_at, msg_count, token_count)
+            table.add_row(
+                session_id,
+                title,
+                session.created_at,
+                session.settings,
+                msg_count,
+                token_count,
+            )
 
         self.console.print(table)
 
@@ -112,6 +162,7 @@ class ChatCLI(cmd.Cmd):
             self.console.print("[red]Please provide a valid chat ID[/red]")
             return
 
+        # Allow prefix matching of conversation IDs
         matching_sessions = [
             s for s in self.sessions.keys() if s.startswith(session_id)
         ]
@@ -127,7 +178,7 @@ class ChatCLI(cmd.Cmd):
         else:
             self.current_session = self.sessions[matching_sessions[0]]
             self.console.print(
-                f"[bold green]Switched to session:[/] {self.current_session.id}"
+                f"[bold green]Switched to session:[/] ({self.current_session.title}) {self.current_session.id}"
             )
             self.do_history("")
 
@@ -198,20 +249,35 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="action", help="Available actions")
 
-    config_parser = subparsers.add_parser("config", help="Configure settings")
+    config_parser = subparsers.add_parser(
+        "default_config", help="Configure default model settings"
+    )
     config_parser.add_argument("--api-key", help="Set API key for your provider")
     config_parser.add_argument("--model", help="Set your model version")
     config_parser.add_argument("--max-tokens", help="Set max tokens")
 
+    model_parser = subparsers.add_parser(
+        "add_config", help="Add additional model settings"
+    )
+    model_parser.add_argument("name", help="Set the name for the model settings")
+    model_parser.add_argument("--api-key", help="Set API key for your provider")
+    model_parser.add_argument("--model", help="Set your model version")
+    model_parser.add_argument("--max-tokens", help="Set max tokens")
+
     args = parser.parse_args()
-    if args.action == "config":
+    if args.action == "default_config":
         args_dict = {
             key: value for key, value in vars(args).items() if value is not None
         }
         del args_dict["action"]
         ChatCLI().save_config(args_dict)
-        print("modified config")
-        pass
+    elif args.action == "add_config":
+        args_dict = {
+            key: value for key, value in vars(args).items() if value is not None
+        }
+        del args_dict["action"]
+        del args_dict["name"]
+        ChatCLI().save_config(args_dict, args.name)
     else:
         ChatCLI().cmdloop()
 

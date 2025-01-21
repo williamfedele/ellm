@@ -1,13 +1,13 @@
 <br/><br/>
 <div>
-    <h3 align="center">💬 Hermes</h3>
+    <h3 align="center">💬 HERMES</h3>
     <p align="center">
       A simple CLI tool to interact and have conversations with LLM APIs from the terminal.
     </p>
 </div>
 <br><br>
 
-_Work in progress: the following is in development state._
+_Work in progress_
 
 ## Getting Started
 I'm currently using [uv](https://github.com/astral-sh/uv) for package management and script execution. It's a great alternative to the mess that is Python's tooling ecosystem.
@@ -22,15 +22,23 @@ The following default config is generated after running:
 
 ```yaml
 [DEFAULT]
-api_key =
-model =
+api_key = NOTSET
+model = NOTSET
 max_tokens = 1000
 ```
 
+New conversations use the DEFAULT settings.
+
 To modify any field, run the following with the option you want to modify:
 ```shell
-uv run hermes.py config --api-key {APIKEY} --model {MODEL} --max-tokens {MAXTOKENS}
+uv run hermes.py default_config --api-key {APIKEY} --model {MODEL} --max-tokens {MAXTOKENS}
 ```
+
+You can also specify additional models to be used by individual models:
+```shell
+uv run hermes.py add_config {NAME} --api-key {APIKEY} --model {MODEL} --max-tokens {MAXTOKENS}
+```
+This is helpful for optimizing API usage. For example: use Claude Sonnet for coding and Haiku for faster responses in simpler tasks.
 
 ## Chatting
 ```shell
@@ -43,9 +51,12 @@ Possible commands:
 - history: Show message history for the active chat session.
 - list: List all available chats.
 - new: Start a new chat.
-- send: Send a message in the current session: `send <message>`
-- switch: Switch to a different session: `switch <session_id>`
-- quit: Exit the chat CLI
+- title: Get session title: `title`. Set session title: `title <title_name>`.
+- send: Send a message in the current session: `send <message>`.
+- switch: Switch to a different session: `switch <session_id>`.
+- settings: Show current settings: `settings`. Change settings: `settings <settings_name>`.
+- tokens: Show token usage for the current session.
+- quit: Exit the chat CLI.
 
 ## Future
 

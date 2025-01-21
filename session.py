@@ -10,7 +10,8 @@ from datetime import datetime
 class Session:
     def __init__(self, id: str = None):
         self.id = id or str(uuid4())
-        self.title: str = ""
+        self.title: str = "Untitled"
+        self.settings = "DEFAULT"
         self.history_file = HISTORY_PATH / f"{self.id}.json"
         self.history: List[Message] = []
         self.created_at = datetime.now().isoformat()
@@ -23,13 +24,15 @@ class Session:
         if self.history_file.exists():
             with open(self.history_file) as f:
                 data = json.load(f)
-                self.title = data.get("title", "")
+                self.title = data.get("title", "Untitled")
+                self.settings = data.get("settings", "DEFAULT")
                 self.created_at = data.get("created_at", self.created_at)
                 self.history = [Message(**msg) for msg in data.get("history", [])]
 
     def save_history(self) -> None:
         data = {
             "title": self.title,
+            "settings": self.settings,
             "created_at": self.created_at,
             "history": [asdict(msg) for msg in self.history],
         }

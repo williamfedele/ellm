@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import List, Dict, Optional
 from rich.console import Console
 from rich.table import Table
+from rich.panel import Panel
+from rich import box
+from rich import print
 from session import Session
 from constants import CONFIG_PATH, HISTORY_PATH
 
@@ -178,7 +181,6 @@ class ChatCLI(cmd.Cmd):
             self.console.print(
                 f"[bold green]Switched to session:[/] ({self.current_session.title}) {self.current_session.id}"
             )
-            self.do_history("")
 
     def do_send(self, message):
         "Send a message in the current session: send <message>"
@@ -208,21 +210,32 @@ class ChatCLI(cmd.Cmd):
             return
 
         if not self.current_session.history:
-            self.console.print("[red]Current session is empty[/red]")
+            self.console.print("[red]Current session is empty.[/]")
+            return
 
-        self.console.print("\n[bold blue]Message history:[/bold blue]")
+        history_text = ""
         for msg in self.current_session.history:
+            content = msg.content.strip()
             if msg.role.upper() == "USER":
-                self.console.print(
-                    f"\n[[yellow]{msg.role.upper()}[/yellow]]: {msg.content}"
+                history_text += (
+                    f"\n[[bold green]{msg.role.upper()}[/]]: {msg.content}\n"
                 )
             elif msg.role.upper() == "ASSISTANT":
-                self.console.print(
-                    f"\n[[orange1]{msg.role.upper()}[/orange1]]: {msg.content}"
-                )
+                history_text += f"\n[[bold blue]{msg.role.upper()}[/]]: {msg.content}\n"
             else:
-                # Don't print system messages
-                pass
+                history_text += (
+                    f"\n[[bold yellow]{msg.role.upper()}[/]]: {msg.content}\n"
+                )
+
+        print(
+            Panel(
+                history_text.strip(),
+                title=f"Chat History ({self.current_session.title})",
+                box=box.ROUNDED,
+                border_style="bright_black",
+                padding=(1, 2),
+            )
+        )
         self.console.print()
 
     def do_tokens(self, arg):

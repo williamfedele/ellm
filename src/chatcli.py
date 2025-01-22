@@ -1,18 +1,15 @@
-import cmd
 import anthropic
-import prompts
-import json
-import argparse
 import configparser
 import os
+import prompts
+import json
+import cmd
 from pathlib import Path
 from typing import List, Dict, Optional
 from rich.console import Console
 from rich.table import Table
 from session import Session
 from constants import CONFIG_PATH, HISTORY_PATH
-
-client = anthropic.Anthropic()
 
 
 class ChatCLI(cmd.Cmd):
@@ -44,6 +41,7 @@ class ChatCLI(cmd.Cmd):
 
         return config
 
+    # TODO: config stuff should probably be extracted
     def save_config(
         self, config_opts: Dict[str, str], settings_name: str = "DEFAULT"
     ) -> None:
@@ -243,44 +241,3 @@ class ChatCLI(cmd.Cmd):
         "Exit the chat CLI"
         self.console.print("[green]Goodbye![/green]")
         return True
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="action", help="Available actions")
-
-    config_parser = subparsers.add_parser(
-        "default_config", help="Configure default model settings"
-    )
-    config_parser.add_argument("--api-key", help="Set API key for your provider")
-    config_parser.add_argument("--model", help="Set your model version")
-    config_parser.add_argument("--max-tokens", help="Set max tokens")
-
-    model_parser = subparsers.add_parser(
-        "add_config", help="Add additional model settings"
-    )
-    model_parser.add_argument("name", help="Set the name for the model settings")
-    model_parser.add_argument("--api-key", help="Set API key for your provider")
-    model_parser.add_argument("--model", help="Set your model version")
-    model_parser.add_argument("--max-tokens", help="Set max tokens")
-
-    args = parser.parse_args()
-    if args.action == "default_config":
-        args_dict = {
-            key: value for key, value in vars(args).items() if value is not None
-        }
-        del args_dict["action"]
-        ChatCLI().save_config(args_dict)
-    elif args.action == "add_config":
-        args_dict = {
-            key: value for key, value in vars(args).items() if value is not None
-        }
-        del args_dict["action"]
-        del args_dict["name"]
-        ChatCLI().save_config(args_dict, args.name)
-    else:
-        ChatCLI().cmdloop()
-
-
-if __name__ == "__main__":
-    main()

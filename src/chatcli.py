@@ -12,61 +12,30 @@ from rich.panel import Panel
 from rich import box
 from rich import print
 from session import Session
-from constants import CONFIG_PATH, HISTORY_PATH
+from constants import HISTORY_PATH
+from config import ConfigManager
 
 
 class ChatCLI(cmd.Cmd):
     intro = "HERMES\nType help of ? to list commands.\n"
     prompt = "> "
 
-    def __init__(self):
+    def __init__(self, config_path):
         super().__init__()
         self.console = Console()
-        self.config = self._load_config()
+        self.config_manager = ConfigManager(config_path)
         self.sessions: Dict[str, Session] = {}
         self.current_session: Optional[Session] = None
         self.load_sessions()
 
-    def _load_config(self) -> configparser.ConfigParser:
-        config = configparser.ConfigParser()
-
-        if CONFIG_PATH.exists():
-            config.read(CONFIG_PATH)
-        else:
-            config["DEFAULT"] = {
-                "api_key": "NOTSET",
-                "model": "NOTSET",
-                "max_tokens": "1000",
-            }
-            CONFIG_PATH.parent.mkdir(exist_ok=True)
-            with open(CONFIG_PATH, "w") as f:
-                config.write(f)
-
-        return config
-
-    # TODO: config stuff should probably be extracted
-    def save_config(
-        self, config_opts: Dict[str, str], settings_name: str = "DEFAULT"
-    ) -> None:
-        if settings_name not in self.config:
-            self.config[settings_name] = {
-                "api_key": "NOTSET",
-                "model": "NOTSET",
-                "max_tokens": "1000",
-            }
-
-        for k, v in config_opts.items():
-            self.config[settings_name][k] = v
-
-        CONFIG_PATH.parent.mkdir(exist_ok=True)
-        with open(CONFIG_PATH, "w") as f:
-            self.config.write(f)
-
     def load_sessions(self) -> None:
-        conversations = list(HISTORY_PATH.glob("*.json"))
-        for convo in conversations:
-            convo_id = convo.stem
-            self.sessions[convo_id] = Session(convo_id)
+        if not HISTORY_PATH.exists():
+            HISTORY_PATH.mkdir(exist_ok=True)
+        else:
+            conversations = list(HISTORY_PATH.glob("*.json"))
+            for convo in conversations:
+                convo_id = convo.stem
+                self.sessions[convo_id] = Session(convo_id)
 
     def do_new(self, arg):
         "Start a new chat"
@@ -103,22 +72,28 @@ class ChatCLI(cmd.Cmd):
         if not arg:
             settings = self.current_session.settings
             # Conversation settings might not exist if the config was modified manually
-            if settings not in self.config:
+            if settings not in self.config_manager.configs:
                 self.console.print(
                     f"[red]Current sessions settings do not exist: {settings}[/]"
                 )
                 return
 
-            model_name = self.config[settings]["model"]
-            max_tokens = self.config[settings]["max_tokens"]
-            self.console.print(
-                f"({settings}) model = {model_name}, max_tokens = {max_tokens}"
-            )
+            # Display config
+            self.console.print(f"[bold blue]{settings} config [/]")
+            for k, v in self.config_manager.get_config(settings).items():
+                # Only display first few chars of api key
+                if k == "api_key" and v != "NOTSET":
+                    v = v[:5] + "-" * (len(v) - 5)
+
+                if v == "NOTSET":
+                    self.console.print(f" - [yellow]{k}[/] -> [red]{v}[/]")
+                else:
+                    self.console.print(f" - [yellow]{k}[/] -> [green]{v}[/]")
             return
 
-        if arg not in self.config:
+        if arg not in self.config_manager.configs:
             self.console.print(
-                f"[red]Invalid settings name. Choose from: {', '.join(self.config.keys())}[/]"
+                f"[red]Invalid settings name. Choose from: {', '.join(self.config_manager.get_config_names())}[/]"
             )
             return
 

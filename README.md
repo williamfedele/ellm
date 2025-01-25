@@ -16,12 +16,12 @@ Conversations are stored in `~/.hermes/conversations/{uuid4}.json`
 
 Config files are stored in: `~/.hermes/config.ini`
 
-
 ### Configuration
 The following default config is generated after running:
 
 ```yaml
 [DEFAULT]
+endpoint = NOTSET
 api_key = NOTSET
 model = NOTSET
 max_tokens = 1000
@@ -29,38 +29,35 @@ max_tokens = 1000
 
 New conversations use the DEFAULT settings.
 
-To modify any field, run the following with the option you want to modify:
+You can modify any field of the default settings using _DEFAULT_ as name. You can also specify additional configurations to be used by individual conversations by specifying a new name and at least one field. Omitting all fields will attempt to print the config.
 ```shell
-uv run hermes.py default_config --api-key {APIKEY} --model {MODEL} --max-tokens {MAXTOKENS}
+uv run hermes.py config {NAME} --endpoint {ENDPOINT} --api-key {APIKEY} --model {MODEL} --max-tokens {MAXTOKENS}
 ```
 
-You can also specify additional models to be used by individual models:
-```shell
-uv run hermes.py add_config {NAME} --api-key {APIKEY} --model {MODEL} --max-tokens {MAXTOKENS}
-```
+You can specify additional models to be used by individual conversations:
+
 This is helpful for optimizing API usage. For example: use Claude Sonnet for coding and Haiku for faster responses in simpler tasks.
 
 ## Chatting
 ```shell
 uv run hermes.py
 ```
-
 Possible commands:
 
-- help: Help menu. You can also do `help <command>` for more information on other commands.
-- history: Show message history for the active chat session.
-- list: List all available chats.
-- new: Start a new chat.
-- title: Get session title: `title`. Set session title: `title <title_name>`.
-- send: Send a message in the current session: `send <message>`.
-- switch: Switch to a different session: `switch <session_id>`.
-- settings: Show current settings: `settings`. Change settings: `settings <settings_name>`.
-- tokens: Show token usage for the current session.
-- quit: Exit the chat CLI.
+- `help`: Help menu. You can also do `help <command>` for more information on other commands.
+- `history`: Show message history for the active chat session.
+- `list`: List all available chats.
+- `new`: Start a new chat.
+- `title`: Get session title: `title`. Set session title: `title <title_name>`.
+- `send`: Send a message in the current session: `send <message>`.
+- `switch`: Switch to a different session: `switch <session_id>`.
+- `settings`: Show current settings: `settings`. Change settings: `settings <settings_name>`.
+- `tokens`: Show token usage for the current session.
+- `quit`: Exit the chat CLI.
 
 ## Future
 
-I'm currently working on this for fun. It may or may not stay in Python. Depends on if I feel another ecosystem is more suitable for future requirements. Apart from letting me chat with the LLM of my choice from the terminal, I'd also like to be able to pass code blocks which is not possible at the moment.
+I'm currently working on this for fun. It may or may not stay in Python. Depends on if I feel another ecosystem is more suitable for future requirements. Apart from letting me chat with the LLM of my choice from the terminal, I'd also like to be able to pass code blocks / files which is not possible at the moment.
 
 ## License
 

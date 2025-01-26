@@ -1,7 +1,7 @@
 import argparse
-from chatcli import ChatCLI
-from constants import CONFIG_PATH
-from config import ConfigManager
+from cli.chatcli import ChatCLI
+from utils.constants import CONFIG_PATH
+from config.manager import ConfigManager
 
 
 def positive_int(value) -> str:

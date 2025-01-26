@@ -1,8 +1,8 @@
 from uuid import uuid4
-from constants import HISTORY_PATH
+from utils.constants import HISTORY_PATH
 import json
-import prompts
-from message import Message
+import utils.prompts as prompts
+from models.message import Message
 from dataclasses import asdict
 from datetime import datetime
 

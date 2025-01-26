@@ -5,10 +5,11 @@ from rich.table import Table
 from rich.panel import Panel
 from rich import box
 from rich import print
-from session import Session
-from constants import HISTORY_PATH
-from config import ConfigManager
-from provider import ProviderManager
+from models.session import Session
+from utils.constants import HISTORY_PATH
+from config.manager import ConfigManager
+from providers.manager import ProviderManager
+
 
 class ChatCLI(cmd.Cmd):
     intro = "HERMES\nType help of ? to list commands.\n"
@@ -24,6 +25,8 @@ class ChatCLI(cmd.Cmd):
         self.current_session: Optional[Session] = None
         self.load_sessions()
 
+        self.provider = None
+
     def load_sessions(self) -> None:
         if not HISTORY_PATH.exists():
             HISTORY_PATH.mkdir(exist_ok=True)
@@ -36,6 +39,14 @@ class ChatCLI(cmd.Cmd):
     def update_provider(self):
         settings = self.current_session.settings
         config = self.config_manager.get_config(settings)
+        if config["api_key"] == "NOTSET":
+            self.console.print(f"[red]API key not set for settings: {settings}[/]")
+            self.provider = None
+            return
+        if config["model"] == "NOTSET":
+            self.console.print(f"[red]Model not set for settings: {settings}[/]")
+            self.provider = None
+            return
         self.provider = ProviderManager.get_provider(config)
 
     def do_new(self, arg):
@@ -91,7 +102,7 @@ class ChatCLI(cmd.Cmd):
                     self.console.print(f" - [yellow]{k}[/] -> [red]{v}[/]")
                 else:
                     self.console.print(f" - [yellow]{k}[/] -> [green]{v}[/]")
-
+            print(self.provider)
             return
 
         if arg not in self.config_manager.configs:
@@ -148,9 +159,7 @@ class ChatCLI(cmd.Cmd):
         ]
 
         if len(matching_sessions) == 0:
-            self.console.print(
-                f"[red]No session found starting with {session_id}[/]"
-            )
+            self.console.print(f"[red]No session found starting with {session_id}[/]")
         elif len(matching_sessions) > 1:
             self.console.print(
                 f"[red]Multiple sessions found starting with {session_id}[/]"

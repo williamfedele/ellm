@@ -1,11 +1,5 @@
-import anthropic
-import configparser
-import os
-import prompts
-import json
 import cmd
-from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -57,7 +51,7 @@ class ChatCLI(cmd.Cmd):
         "Set/Get the title for the current session"
         if not self.current_session:
             self.console.print(
-                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
             )
             return
 
@@ -67,13 +61,13 @@ class ChatCLI(cmd.Cmd):
 
         self.current_session.title = arg
         self.current_session.save_history()
-        self.console.print(f"[bold green]Set title to:[/bold green] {arg}")
+        self.console.print(f"[bold green]Set title to:[/] {arg}")
 
     def do_settings(self, arg):
         "Change the settings for the current session: settings <settings_name>"
         if not self.current_session:
             self.console.print(
-                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
             )
             return
 
@@ -145,7 +139,7 @@ class ChatCLI(cmd.Cmd):
     def do_switch(self, session_id):
         "Switch to a different chat: switch <session_id>"
         if not session_id:
-            self.console.print("[red]Please provide a valid chat ID[/red]")
+            self.console.print("[red]Please provide a valid chat ID[/]")
             return
 
         # Allow prefix matching of conversation IDs
@@ -155,11 +149,11 @@ class ChatCLI(cmd.Cmd):
 
         if len(matching_sessions) == 0:
             self.console.print(
-                f"[red]No session found starting with {session_id}[/red]"
+                f"[red]No session found starting with {session_id}[/]"
             )
         elif len(matching_sessions) > 1:
             self.console.print(
-                f"[red]Multiple sessions found starting with {session_id}[/red]"
+                f"[red]Multiple sessions found starting with {session_id}[/]"
             )
         else:
             self.current_session = self.sessions[matching_sessions[0]]
@@ -172,12 +166,12 @@ class ChatCLI(cmd.Cmd):
         "Send a message in the current session: send <message>"
         if not self.current_session:
             self.console.print(
-                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
             )
             return
 
         if not message:
-            self.console.print("[red]Provide a message to send[/red]")
+            self.console.print("[red]Provide a message to send[/]")
             return
 
         self.current_session.add_message("user", message)
@@ -191,7 +185,7 @@ class ChatCLI(cmd.Cmd):
         "Show message history for the active session"
         if not self.current_session:
             self.console.print(
-                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
             )
             return
 
@@ -228,7 +222,7 @@ class ChatCLI(cmd.Cmd):
         "Show token usage for the current session"
         if not self.current_session:
             self.console.print(
-                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/red]"
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
             )
             return
 
@@ -238,5 +232,5 @@ class ChatCLI(cmd.Cmd):
 
     def do_quit(self, arg):
         "Exit the chat CLI"
-        self.console.print("[green]Goodbye![/green]")
+        self.console.print("[green]Goodbye![/]")
         return True

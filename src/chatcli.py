@@ -14,6 +14,7 @@ from rich import print
 from session import Session
 from constants import HISTORY_PATH
 from config import ConfigManager
+from provider import create_provider
 
 
 class ChatCLI(cmd.Cmd):
@@ -22,8 +23,10 @@ class ChatCLI(cmd.Cmd):
 
     def __init__(self, config_path):
         super().__init__()
+
         self.console = Console()
         self.config_manager = ConfigManager(config_path)
+
         self.sessions: Dict[str, Session] = {}
         self.current_session: Optional[Session] = None
         self.load_sessions()
@@ -37,12 +40,18 @@ class ChatCLI(cmd.Cmd):
                 convo_id = convo.stem
                 self.sessions[convo_id] = Session(convo_id)
 
+    def update_provider(self):
+        settings = self.current_session.settings
+        config = self.config_manager.get_config(settings)
+        self.provider = create_provider(config["api_type"])
+
     def do_new(self, arg):
         "Start a new chat"
 
         session = Session()
         self.sessions[session.id] = session
         self.current_session = session
+        self.update_provider()
         self.console.print(f"[bold green]Created new session:[/] {session.id}")
 
     def do_title(self, arg):
@@ -89,6 +98,7 @@ class ChatCLI(cmd.Cmd):
                     self.console.print(f" - [yellow]{k}[/] -> [red]{v}[/]")
                 else:
                     self.console.print(f" - [yellow]{k}[/] -> [green]{v}[/]")
+
             return
 
         if arg not in self.config_manager.configs:
@@ -98,13 +108,14 @@ class ChatCLI(cmd.Cmd):
             return
 
         self.current_session.settings = arg
+        self.update_provider()
         self.current_session.save_history()
         self.console.print(f"[bold green]Switched to settings: {arg}[/]")
 
     def do_list(self, arg):
         "List all chats"
         if not self.sessions:
-            print("No chats yet.")
+            self.console.print(f"[red]No chats yet. Start one with 'new'[/]")
             return
 
         table = Table(title="All Chats:")
@@ -153,6 +164,7 @@ class ChatCLI(cmd.Cmd):
             )
         else:
             self.current_session = self.sessions[matching_sessions[0]]
+            self.update_provider()
             self.console.print(
                 f"[bold green]Switched to session:[/] ({self.current_session.title}) {self.current_session.id}"
             )

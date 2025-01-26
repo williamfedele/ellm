@@ -21,28 +21,36 @@ The following default config is generated after running:
 
 ```yaml
 [DEFAULT]
-endpoint = NOTSET
+base_url = NOTSET
 api_key = NOTSET
 model = NOTSET
+api_type = openai
 max_tokens = 1000
 ```
 
 New conversations use the DEFAULT settings.
 
-You can modify any field of the default settings using _DEFAULT_ as name. You can also specify additional configurations to be used by individual conversations by specifying a new name and at least one field. Omitting all fields will attempt to print the config.
+You can modify any field of the default settings using _DEFAULT_ as name. You can also specify a new name to create a new config to be used on a conversation by conversation basis. This is helpful for optimizing API usage. For example: use Claude Sonnet for coding and Haiku for simpler tasks.
 ```shell
-uv run hermes.py config {NAME} --endpoint {ENDPOINT} --api-key {APIKEY} --model {MODEL} --max-tokens {MAXTOKENS}
+uv run hermes.py config NAME --base-url BASEURL --api-key APIKEY --model MODEL --api-type {openai, anthropic} --max-tokens MAXTOKENS
+```
+Examples:
+```shell
+uv run hermes.py config code --api-key 123abc --model claude-3-5-sonnet-20241022 --api-type anthropic --max-tokens 2048
+```
+```shell
+uv run hermes.py config DeepSeekR1 --base-url https://api.deepseek.com --api-key cba321 --model deepseek-reasoner --api-type openai --max-tokens 4096
 ```
 
-You can specify additional models to be used by individual conversations:
+Omitting the base url will use the default from the providers SDK.
 
-This is helpful for optimizing API usage. For example: use Claude Sonnet for coding and Haiku for faster responses in simpler tasks.
+Omitting all fields will print that config.
 
 ## Chatting
 ```shell
 uv run hermes.py
 ```
-Possible commands:
+Commands:
 
 - `help`: Help menu. You can also do `help <command>` for more information on other commands.
 - `history`: Show message history for the active chat session.

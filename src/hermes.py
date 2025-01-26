@@ -4,16 +4,31 @@ from constants import CONFIG_PATH
 from config import ConfigManager
 
 
+def positive_int(value) -> str:
+    try:
+        value = int(value)
+        if value <= 0:
+            raise ValueError
+        return str(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value} is not a positive integer")
+
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="action", help="Available actions")
 
     model_parser = subparsers.add_parser("config", help="Add additional model settings")
     model_parser.add_argument("name", help="Set the name for the model settings")
-    model_parser.add_argument("--endpoint", help="Set the endpoint for the provider")
+    model_parser.add_argument("--base-url", help="Set the base url for the provider")
     model_parser.add_argument("--api-key", help="Set your API key")
     model_parser.add_argument("--model", help="Set your model version")
-    model_parser.add_argument("--max-tokens", help="Set max tokens")
+    model_parser.add_argument(
+        "--api-type",
+        choices=["openai", "anthropic"],
+        help="Set the api type (OpenAI API, AnthropicAPI, etc)",
+    )
+    model_parser.add_argument("--max-tokens", type=positive_int, help="Set max tokens")
 
     args = parser.parse_args()
     if args.action == "config":
@@ -31,7 +46,7 @@ def main():
             else:
                 print(f"{args.name} config:")
                 for k, v in config.items():
-                    if k == "api_key":
+                    if k == "api_key" and v != "NOTSET":
                         v = v[:5] + "-" * (len(v) - 5)
                     print(f" - {k} -> {v}")
     else:

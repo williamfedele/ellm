@@ -14,9 +14,10 @@ class ConfigManager:
             config.read(self.config_file_path)
         else:
             config["DEFAULT"] = {
-                "endpoint": "NOTSET",
+                "base_url": "NOTSET",
                 "api_key": "NOTSET",
                 "model": "NOTSET",
+                "api_type": "openai",
                 "max_tokens": "1000",
             }
             self.config_file_path.parent.mkdir(exist_ok=True)
@@ -28,9 +29,10 @@ class ConfigManager:
     def save_config(self, config_opts: Dict[str, str], settings_name: str) -> None:
         if settings_name not in self.configs:
             self.configs[settings_name] = {
-                "endpoint": "NOTSET",
+                "base_url": "NOTSET",
                 "api_key": "NOTSET",
                 "model": "NOTSET",
+                "api_type": "openai",
                 "max_tokens": "1000",
             }
 

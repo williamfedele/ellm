@@ -36,9 +36,19 @@ class AnthropicAPI(APIProvider):
 
 PROVIDERS = {"openai": OpenAIAPI, "anthropic": AnthropicAPI}
 
+class ProviderManager:
+    _instances = {}
 
-def create_provider(api_type):
-    provider_class = PROVIDERS.get(api_type)
-    if not provider_class:
-        return None
-    return provider_class()
+    @classmethod
+    def get_provider(cls, config):
+        key = (config["api_type"], config["base_url"])
+        if key not in cls._instances:
+            cls._instances[key] = cls._create_provider(config)
+        return cls._instances[key]
+
+    @staticmethod
+    def _create_provider(config):
+        provider_class = PROVIDERS.get(config['api_type'])
+        if not provider_class:
+            return OpenAIAPI()
+        return provider_class()

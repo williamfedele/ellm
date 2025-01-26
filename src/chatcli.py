@@ -14,8 +14,7 @@ from rich import print
 from session import Session
 from constants import HISTORY_PATH
 from config import ConfigManager
-from provider import create_provider
-
+from provider import ProviderManager
 
 class ChatCLI(cmd.Cmd):
     intro = "HERMES\nType help of ? to list commands.\n"
@@ -43,7 +42,7 @@ class ChatCLI(cmd.Cmd):
     def update_provider(self):
         settings = self.current_session.settings
         config = self.config_manager.get_config(settings)
-        self.provider = create_provider(config["api_type"])
+        self.provider = ProviderManager.get_provider(config)
 
     def do_new(self, arg):
         "Start a new chat"

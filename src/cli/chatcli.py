@@ -102,7 +102,7 @@ class ChatCLI(cmd.Cmd):
                     self.console.print(f" - [yellow]{k}[/] -> [red]{v}[/]")
                 else:
                     self.console.print(f" - [yellow]{k}[/] -> [green]{v}[/]")
-            print(self.provider)
+
             return
 
         if arg not in self.config_manager.configs:
@@ -184,8 +184,19 @@ class ChatCLI(cmd.Cmd):
             return
 
         self.current_session.add_message("user", message)
+
+        # if either model or api key are not set, a provider cannot be created
+        if not self.provider:
+            self.console.print("[red]Model and api key are required for sending. Check current settings[/]")
+            return
+
+        # TODO: don't like having to repeat this to get the config of the current session
+        settings = self.current_session.settings
+        config = self.config_manager.get_config(settings)
+
         # call LLM
-        response = "example assistant response"
+        response = self.provider.send(config, self.current_session.history)
+
         self.console.print(f"\n{response}\n")
 
         self.current_session.add_message("assistant", response)

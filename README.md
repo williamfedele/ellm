@@ -1,6 +1,6 @@
 <br/><br/>
 <div>
-    <h3 align="center">💬 HERMES</h3>
+    <h3 align="center">🌳 Ellm</h3>
     <p align="center">
       A simple CLI tool to interact and have conversations with LLM APIs from the terminal.
     </p>
@@ -12,9 +12,9 @@ _Work in progress_
 ## Getting Started
 I'm currently using [uv](https://github.com/astral-sh/uv) for package management and script execution. It's a great alternative to the mess that is Python's tooling ecosystem.
 
-Conversations are stored in `~/.hermes/conversations/{uuid4}.json`
+Conversations are stored in `~/.ellm/conversations/{uuid4}.json`
 
-Config files are stored in: `~/.hermes/config.ini`
+Config files are stored in: `~/.ellm/config.ini`
 
 ### Configuration
 The following default config is generated after running:
@@ -32,14 +32,14 @@ New conversations use the DEFAULT settings.
 
 You can modify any field of the default settings using _DEFAULT_ as name. You can also specify a new name to create a new config to be used on a conversation by conversation basis. This is helpful for optimizing API usage. For example: use Claude Sonnet for coding and Haiku for simpler tasks.
 ```shell
-uv run hermes.py config NAME --base-url BASEURL --api-key APIKEY --model MODEL --api-type {openai, anthropic} --max-tokens MAXTOKENS
+uv run ellm.py config NAME --base-url BASEURL --api-key APIKEY --model MODEL --api-type {openai, anthropic} --max-tokens MAXTOKENS
 ```
 Examples:
 ```shell
-uv run hermes.py config code --api-key 123abc --model claude-3-5-sonnet-20241022 --api-type anthropic --max-tokens 2048
+uv run ellm.py config code --api-key 123abc --model claude-3-5-sonnet-20241022 --api-type anthropic --max-tokens 2048
 ```
 ```shell
-uv run hermes.py config DeepSeekR1 --base-url https://api.deepseek.com --api-key cba321 --model deepseek-reasoner --api-type openai --max-tokens 4096
+uv run ellm.py config DeepSeekR1 --base-url https://api.deepseek.com --api-key cba321 --model deepseek-reasoner --api-type openai --max-tokens 4096
 ```
 
 Omitting the base url will use the default from the providers SDK.
@@ -48,7 +48,7 @@ Omitting all fields will print that config.
 
 ## Chatting
 ```shell
-uv run hermes.py
+uv run ellm.py
 ```
 Commands:
 
@@ -69,4 +69,4 @@ I'm currently working on this for fun. It may or may not stay in Python. Depends
 
 ## License
 
-[MIT](https://github.com/williamfedele/hermes/blob/main/LICENSE)
+[MIT](https://github.com/williamfedele/ellm/blob/main/LICENSE)

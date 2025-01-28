@@ -11,9 +11,6 @@ from providers.manager import ProviderManager
 
 
 class ChatCLI:
-    intro = "HERMES\nType help of ? to list commands.\n"
-    prompt = "> "
-
     def __init__(self, config_path):
         super().__init__()
 

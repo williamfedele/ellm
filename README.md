@@ -10,7 +10,7 @@
 _Work in progress_
 
 ## Getting Started
-I'm currently using [uv](https://github.com/astral-sh/uv) for package management and script execution. It's a great alternative to the mess that is Python's tooling ecosystem.
+I'm currently using [uv](https://github.com/astral-sh/uv) for package management and execution. It's a great alternative to the mess that is Python's tooling ecosystem.
 
 Conversations are stored in `~/.ellm/conversations/{uuid4}.json`
 
@@ -30,7 +30,7 @@ max_tokens = 1000
 
 New conversations use the DEFAULT settings.
 
-You can modify any field of the default settings using _DEFAULT_ as name. You can also specify a new name to create a new config to be used on a conversation by conversation basis. This is helpful for optimizing API usage. For example: use Claude Sonnet for coding and Haiku for simpler tasks.
+You can modify any field of the default settings using _DEFAULT_ as name in command below. You can also specify a new name to create a new config to be used on a conversation by conversation basis. This is helpful for optimizing API usage. For example: using Claude Sonnet for coding and Haiku for simpler tasks.
 ```shell
 uv run ellm.py config NAME --base-url BASEURL --api-key APIKEY --model MODEL --api-type {openai, anthropic} --max-tokens MAXTOKENS
 ```
@@ -46,26 +46,38 @@ Omitting the base url will use the default from the providers SDK.
 
 Omitting all fields will print that config.
 
-## Chatting
+## Running
 ```shell
 uv run ellm.py
 ```
-Commands:
 
-- `help`: Help menu. You can also do `help <command>` for more information on other commands.
-- `history`: Show message history for the active chat session.
-- `list`: List all available chats.
-- `new`: Start a new chat.
-- `title`: Get session title: `title`. Set session title: `title <title_name>`.
-- `send`: Send a message in the current session: `send <message>`.
-- `switch`: Switch to a different session: `switch <session_id>`.
-- `settings`: Show current settings: `settings`. Change settings: `settings <settings_name>`.
-- `tokens`: Show token usage for the current session.
-- `quit`: Exit the chat CLI.
+### Commands:
+
+Commands are prefixed with slash. No leading slash will be interpreted as a message to be sent in the session.
+
+- `/new`: Start a new chat.
+- `/branch`: Create a new branched session from the current session.
+- `/title`: Get session title: `title`. Set session title: `title <title_name>`.
+- `/settings`: Show current settings: `settings`. Change settings: `settings <settings_name>`.
+- `/list`: List all available chats.
+- `/switch`: Switch to a different session: `switch <session_id>`.
+- `/send`: Send a message in the current session: `send <message>`.
+- `/history`: Show message history for the active chat session.
+- `/tokens`: Show token usage for the current session.
+- `/delete`: Delete a session: `/delete <session_id>`
+- `/quit`: Exit the chat CLI.
+- `/help`: Show available commands.
+
 
 ## Future
 
-I'm currently working on this for fun. It may or may not stay in Python. Depends on if I feel another ecosystem is more suitable for future requirements. Apart from letting me chat with the LLM of my choice from the terminal, I'd also like to be able to pass code blocks / files which is not possible at the moment.
+I'm currently working on this for fun.
+
+### Plans:
+
+- OpenAI API implementation
+- Ability to pass in code blocks or files
+
 
 ## License
 

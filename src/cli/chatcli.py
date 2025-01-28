@@ -130,7 +130,7 @@ class ChatCLI:
         self.console.print(f"[bold green]Switched to settings: {arg}[/]")
 
     def list(self, arg):
-        "List all chats: /list"
+        "List all chats"
         if not self.sessions:
             self.console.print(f"[red]No chats yet. Start one with 'new'[/]")
             return
@@ -163,7 +163,7 @@ class ChatCLI:
         self.console.print(table)
 
     def switch(self, session_id):
-        "Switch to a different chat: /switch <session_id>"
+        "Switch to a different session: /switch <session_id>"
         if not session_id:
             self.console.print("[red]Please provide a valid chat ID[/]")
             return
@@ -219,7 +219,7 @@ class ChatCLI:
         self.current_session.add_message("assistant", response)
 
     def history(self, arg):
-        "Show message history for the active session: /history"
+        "Show message history for the active session"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
@@ -254,7 +254,7 @@ class ChatCLI:
         self.console.print()
 
     def tokens(self, arg):
-        "Show token usage for the current session: /tokens"
+        "Show token usage for the current session"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
@@ -266,7 +266,7 @@ class ChatCLI:
         )
 
     def delete(self, arg):
-        "Delete a chat: delete <session_id>"
+        "Delete a session: delete <session_id>"
         if not arg:
             self.console.print("[red]Please provide a valid chat ID[/]")
             return
@@ -294,7 +294,7 @@ class ChatCLI:
             self.console.print(f"[bold green]Deleted chat: {arg}[/]")
 
     def branch(self, arg):
-        "Create a new branch from the current session: /branch"
+        "Create a new branch from the current session"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"

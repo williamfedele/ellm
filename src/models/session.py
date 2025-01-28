@@ -11,6 +11,7 @@ class Session:
     def __init__(self, id: str = None):
         self.id = id or str(uuid4())
         self.title: str = "Untitled"
+        self.branched_from: str = "master"
         self.settings = "DEFAULT"
         self.history_file = HISTORY_PATH / f"{self.id}.json"
         self.history: List[Message] = []
@@ -25,6 +26,7 @@ class Session:
             with open(self.history_file) as f:
                 data = json.load(f)
                 self.title = data.get("title", "Untitled")
+                self.branched_from = data.get("branched_from", "master")
                 self.settings = data.get("settings", "DEFAULT")
                 self.created_at = data.get("created_at", self.created_at)
                 self.history = [Message(**msg) for msg in data.get("history", [])]
@@ -32,6 +34,7 @@ class Session:
     def save_history(self) -> None:
         data = {
             "title": self.title,
+            "branched_from": self.branched_from,
             "settings": self.settings,
             "created_at": self.created_at,
             "history": [asdict(msg) for msg in self.history],

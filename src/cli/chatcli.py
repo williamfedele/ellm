@@ -27,6 +27,7 @@ class ChatCLI:
 
         self.commands = {
             "new": self.new,
+            "branch": self.branch,
             "title": self.title,
             "settings": self.settings,
             "list": self.list,
@@ -138,6 +139,7 @@ class ChatCLI:
         table.add_column("ID")
         table.add_column("Title")
         table.add_column("Created At")
+        table.add_column("Branched From")
         table.add_column("Settings")
         table.add_column("Messages", justify="right")
         table.add_column("Tokens", justify="right")
@@ -152,6 +154,7 @@ class ChatCLI:
                 session_id,
                 title,
                 session.created_at,
+                session.branched_from,
                 session.settings,
                 msg_count,
                 token_count,
@@ -195,14 +198,14 @@ class ChatCLI:
             self.console.print("[red]Provide a message to send[/]")
             return
 
-        self.current_session.add_message("user", message)
-
         # if either model or api key are not set, a provider cannot be created
         if not self.provider:
             self.console.print(
                 "[red]Model and api key are required for sending. Check current settings[/]"
             )
             return
+
+        self.current_session.add_message("user", message)
 
         # TODO: don't like having to repeat this to get the config of the current session
         settings = self.current_session.settings
@@ -289,6 +292,26 @@ class ChatCLI:
                 self.current_session = None
 
             self.console.print(f"[bold green]Deleted chat: {arg}[/]")
+
+    def branch(self, arg):
+        "Create a new branch from the current session: /branch"
+        if not self.current_session:
+            self.console.print(
+                "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
+            )
+            return
+
+        # create a new session with the same metadata as the current session
+        branch_session = Session()
+        branch_session.title = self.current_session.title + " (branch)"
+        branch_session.branched_from = self.current_session.id
+        branch_session.settings = self.current_session.settings
+        branch_session.history = self.current_session.history
+        branch_session.save_history()
+
+        self.sessions[branch_session.id] = branch_session
+        self.current_session = branch_session
+        self.console.print(f"[bold green]Created branch: {branch_session.id}[/]")
 
     def handle_input(self, user_input: str) -> None:
         if not user_input:

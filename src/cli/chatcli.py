@@ -34,6 +34,7 @@ class ChatCLI:
             "send": self.send,
             "history": self.history,
             "tokens": self.tokens,
+            "delete": self.delete,
             "quit": self.quit,
             "help": self.help,
         }
@@ -61,7 +62,7 @@ class ChatCLI:
         self.provider = ProviderManager.get_provider(config)
 
     def new(self, arg):
-        "Start a new chat"
+        "Start a new chat: /new"
 
         session = Session()
         self.sessions[session.id] = session
@@ -70,7 +71,7 @@ class ChatCLI:
         self.console.print(f"[bold green]Created new session:[/] {session.id}")
 
     def title(self, arg):
-        "Set/Get the title for the current session"
+        "Set the title for the current session, /title <title>"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
@@ -86,7 +87,7 @@ class ChatCLI:
         self.console.print(f"[bold green]Set title to:[/] {arg}")
 
     def settings(self, arg):
-        "Change the settings for the current session: settings <settings_name>"
+        "Change the settings for the current session: /settings <settings_name>"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
@@ -128,7 +129,7 @@ class ChatCLI:
         self.console.print(f"[bold green]Switched to settings: {arg}[/]")
 
     def list(self, arg):
-        "List all chats"
+        "List all chats: /list"
         if not self.sessions:
             self.console.print(f"[red]No chats yet. Start one with 'new'[/]")
             return
@@ -159,7 +160,7 @@ class ChatCLI:
         self.console.print(table)
 
     def switch(self, session_id):
-        "Switch to a different chat: switch <session_id>"
+        "Switch to a different chat: /switch <session_id>"
         if not session_id:
             self.console.print("[red]Please provide a valid chat ID[/]")
             return
@@ -183,7 +184,7 @@ class ChatCLI:
             )
 
     def send(self, message):
-        "Send a message in the current session: send <message>"
+        "Send a message in the current session: <message>"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
@@ -215,7 +216,7 @@ class ChatCLI:
         self.current_session.add_message("assistant", response)
 
     def history(self, arg):
-        "Show message history for the active session"
+        "Show message history for the active session: /history"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
@@ -250,7 +251,7 @@ class ChatCLI:
         self.console.print()
 
     def tokens(self, arg):
-        "Show token usage for the current session"
+        "Show token usage for the current session: /tokens"
         if not self.current_session:
             self.console.print(
                 "[red]You're not in a session. Start one with 'new' or switch to an existing one with 'switch'[/]"
@@ -260,6 +261,34 @@ class ChatCLI:
         self.console.print(
             f"Total session tokens: {self.current_session.get_token_count()}"
         )
+
+    def delete(self, arg):
+        "Delete a chat: delete <session_id>"
+        if not arg:
+            self.console.print("[red]Please provide a valid chat ID[/]")
+            return
+
+        if arg not in self.sessions:
+            self.console.print(f"[red]No chat found with ID: {arg}[/]")
+            return
+
+        file_path = HISTORY_PATH / f"{arg}.json"
+        if file_path.exists():
+            # double check
+            confirm = input(f"Are you sure you want to delete chat: {arg}? (y/n): ")
+            if confirm.lower() != "y":
+                self.console.print("[red]Deletion cancelled[/]")
+                return
+
+            # delete the file
+            file_path.unlink()
+
+            del self.sessions[arg]
+
+            if self.current_session and self.current_session.id == arg:
+                self.current_session = None
+
+            self.console.print(f"[bold green]Deleted chat: {arg}[/]")
 
     def handle_input(self, user_input: str) -> None:
         if not user_input:
@@ -275,6 +304,11 @@ class ChatCLI:
             self.send(user_input)
 
     def run(self):
+        "Start the chat CLI"
+
+        self.console.print("[bold green]Welcome to Ellm![/]")
+        self.console.print("[bold]Type /help for a list of commands[/]")
+
         while self.running:
             try:
                 user_input = self.console.input(">>> ")

@@ -1,4 +1,3 @@
-import cmd
 from typing import Dict, Optional
 from rich.console import Console
 from rich.table import Table
@@ -11,12 +10,14 @@ from config.manager import ConfigManager
 from providers.manager import ProviderManager
 
 
-class ChatCLI(cmd.Cmd):
+class ChatCLI:
     intro = "HERMES\nType help of ? to list commands.\n"
     prompt = "> "
 
     def __init__(self, config_path):
         super().__init__()
+
+        self.running = True
 
         self.console = Console()
         self.config_manager = ConfigManager(config_path)
@@ -26,6 +27,19 @@ class ChatCLI(cmd.Cmd):
         self.load_sessions()
 
         self.provider = None
+
+        self.commands = {
+            "new": self.new,
+            "title": self.title,
+            "settings": self.settings,
+            "list": self.list,
+            "switch": self.switch,
+            "send": self.send,
+            "history": self.history,
+            "tokens": self.tokens,
+            "quit": self.quit,
+            "help": self.help,
+        }
 
     def load_sessions(self) -> None:
         if not HISTORY_PATH.exists():
@@ -49,7 +63,7 @@ class ChatCLI(cmd.Cmd):
             return
         self.provider = ProviderManager.get_provider(config)
 
-    def do_new(self, arg):
+    def new(self, arg):
         "Start a new chat"
 
         session = Session()
@@ -58,7 +72,7 @@ class ChatCLI(cmd.Cmd):
         self.update_provider()
         self.console.print(f"[bold green]Created new session:[/] {session.id}")
 
-    def do_title(self, arg):
+    def title(self, arg):
         "Set/Get the title for the current session"
         if not self.current_session:
             self.console.print(
@@ -74,7 +88,7 @@ class ChatCLI(cmd.Cmd):
         self.current_session.save_history()
         self.console.print(f"[bold green]Set title to:[/] {arg}")
 
-    def do_settings(self, arg):
+    def settings(self, arg):
         "Change the settings for the current session: settings <settings_name>"
         if not self.current_session:
             self.console.print(
@@ -116,7 +130,7 @@ class ChatCLI(cmd.Cmd):
         self.current_session.save_history()
         self.console.print(f"[bold green]Switched to settings: {arg}[/]")
 
-    def do_list(self, arg):
+    def list(self, arg):
         "List all chats"
         if not self.sessions:
             self.console.print(f"[red]No chats yet. Start one with 'new'[/]")
@@ -147,7 +161,7 @@ class ChatCLI(cmd.Cmd):
 
         self.console.print(table)
 
-    def do_switch(self, session_id):
+    def switch(self, session_id):
         "Switch to a different chat: switch <session_id>"
         if not session_id:
             self.console.print("[red]Please provide a valid chat ID[/]")
@@ -171,7 +185,7 @@ class ChatCLI(cmd.Cmd):
                 f"[bold green]Switched to session:[/] ({self.current_session.title}) {self.current_session.id}"
             )
 
-    def do_send(self, message):
+    def send(self, message):
         "Send a message in the current session: send <message>"
         if not self.current_session:
             self.console.print(
@@ -187,7 +201,9 @@ class ChatCLI(cmd.Cmd):
 
         # if either model or api key are not set, a provider cannot be created
         if not self.provider:
-            self.console.print("[red]Model and api key are required for sending. Check current settings[/]")
+            self.console.print(
+                "[red]Model and api key are required for sending. Check current settings[/]"
+            )
             return
 
         # TODO: don't like having to repeat this to get the config of the current session
@@ -201,7 +217,7 @@ class ChatCLI(cmd.Cmd):
 
         self.current_session.add_message("assistant", response)
 
-    def do_history(self, arg):
+    def history(self, arg):
         "Show message history for the active session"
         if not self.current_session:
             self.console.print(
@@ -223,9 +239,7 @@ class ChatCLI(cmd.Cmd):
             elif msg.role.upper() == "ASSISTANT":
                 history_text += f"\n[[bold blue]{msg.role.upper()}[/]]: {msg.content}\n"
             else:
-                history_text += (
-                    f"\n[[bold yellow]{msg.role.upper()}[/]]: {msg.content}\n"
-                )
+                continue
 
         print(
             Panel(
@@ -238,7 +252,7 @@ class ChatCLI(cmd.Cmd):
         )
         self.console.print()
 
-    def do_tokens(self, arg):
+    def tokens(self, arg):
         "Show token usage for the current session"
         if not self.current_session:
             self.console.print(
@@ -250,7 +264,37 @@ class ChatCLI(cmd.Cmd):
             f"Total session tokens: {self.current_session.get_token_count()}"
         )
 
-    def do_quit(self, arg):
+    def handle_input(self, user_input: str) -> None:
+        if not user_input:
+            return
+
+        if user_input.startswith("/"):
+            command, *args = user_input[1:].split(" ")
+            if command in self.commands:
+                self.commands[command](" ".join(args))
+            else:
+                self.console.print(f"[red]Unknown command: {command}[/]")
+        else:
+            self.send(user_input)
+
+    def run(self):
+        while self.running:
+            try:
+                user_input = self.console.input(">>> ")
+                self.handle_input(user_input)
+            except KeyboardInterrupt:
+                self.quit()
+            except EOFError:
+                self.quit()
+
+    def quit(self, arg):
         "Exit the chat CLI"
         self.console.print("[green]Goodbye![/]")
-        return True
+        self.running = False
+
+    def help(self, arg):
+        "Show available commands"
+        self.console.print("Available commands:")
+        for command, func in self.commands.items():
+            self.console.print(f" - /{command}: {func.__doc__}")
+        self.console.print("")

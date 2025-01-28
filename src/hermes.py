@@ -50,7 +50,7 @@ def main():
                         v = v[:5] + "-" * (len(v) - 5)
                     print(f" - {k} -> {v}")
     else:
-        ChatCLI(CONFIG_PATH).cmdloop()
+        ChatCLI(CONFIG_PATH).run()
 
 
 if __name__ == "__main__":

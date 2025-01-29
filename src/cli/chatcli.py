@@ -40,6 +40,9 @@ class ChatCLI:
             "help": self.help,
         }
 
+        self.multiline_mode = False
+        self.multiline_buffer = []
+
     def load_sessions(self) -> None:
         if not HISTORY_PATH.exists():
             HISTORY_PATH.mkdir(exist_ok=True)
@@ -203,6 +206,8 @@ class ChatCLI:
         config = self.config_manager.get_config(settings)
 
         # call LLM
+        # TODO: if this fails due to a bad request, the user message is still added to the history
+        # conversations should always alternate between user and assistant
         response = self.provider.send(config, self.current_session.history)
 
         self.console.print(f"\n{response}\n")
@@ -224,12 +229,11 @@ class ChatCLI:
         history_text = ""
         for msg in self.current_session.history:
             content = msg.content.strip()
-            if msg.role.upper() == "USER":
-                history_text += (
-                    f"\n[[bold green]{msg.role.upper()}[/]]: {msg.content}\n"
-                )
-            elif msg.role.upper() == "ASSISTANT":
-                history_text += f"\n[[bold blue]{msg.role.upper()}[/]]: {msg.content}\n"
+
+            if msg.role == "user":
+                history_text += f"\n[[yellow]{msg.role.upper()}[/]]\n\n{content}\n"
+            elif msg.role == "assistant":
+                history_text += f"\n[[bold blue]{msg.role.upper()}[/]]\n\n{content}\n"
             else:
                 continue
 
@@ -257,7 +261,7 @@ class ChatCLI:
         )
 
     def delete(self, arg):
-        "Delete a session: delete <session_id>"
+        "Delete a session: /delete <session_id>"
         if not arg:
             self.console.print("[red]Please provide a valid chat ID[/]")
             return
@@ -308,12 +312,38 @@ class ChatCLI:
         if not user_input:
             return
 
-        if user_input.startswith("/"):
+        # Handle commands
+        # Slash commands cannot be used in multiline mode
+        # Multiline mode is started and stopped with triple quotes,
+        #   then the buffer is sent as a message
+        if user_input.startswith("/") and not self.multiline_mode:
             command, *args = user_input[1:].split(" ")
             if command in self.commands:
                 self.commands[command](" ".join(args))
             else:
                 self.console.print(f"[red]Unknown command: {command}[/]")
+        elif user_input.startswith('"""') and not self.multiline_mode:
+            self.multiline_mode = True
+            self.multiline_buffer = []
+            # Check for input on the same line as the starting triple quotes
+            user_input = user_input[3:].strip()
+            if user_input:
+                self.multiline_buffer.append(user_input)
+
+        elif self.multiline_mode:
+            if user_input.endswith('"""'):
+                self.multiline_mode = False
+                # Check for input on the same line as the ending triple quotes
+                user_input = user_input[:-3].strip()
+                if user_input:
+                    self.multiline_buffer.append(user_input)
+                multiline_input = "\n".join(self.multiline_buffer)
+                print(multiline_input)
+                if multiline_input:
+                    self.send(multiline_input)
+                self.multiline_buffer = []
+            else:
+                self.multiline_buffer.append(user_input)
         else:
             self.send(user_input)
 
@@ -325,7 +355,8 @@ class ChatCLI:
 
         while self.running:
             try:
-                user_input = self.console.input(">>> ")
+                prompt = "... " if self.multiline_mode else ">>> "
+                user_input = self.console.input(prompt)
                 self.handle_input(user_input)
             except KeyboardInterrupt:
                 self.quit()
@@ -342,4 +373,7 @@ class ChatCLI:
         self.console.print("Available commands:")
         for command, func in self.commands.items():
             self.console.print(f" - /{command}: {func.__doc__}")
+
+        self.console.print("")
+        self.console.print('Use """ to start and stop multiline mode')
         self.console.print("")

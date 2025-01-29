@@ -105,16 +105,7 @@ class ChatCLI:
                 return
 
             # Display config
-            self.console.print(f"[bold blue]{settings} config [/]")
-            for k, v in self.config_manager.get_config(settings).items():
-                # Only display first few chars of api key
-                if k == "api_key" and v != "NOTSET":
-                    v = v[:5] + "-" * (len(v) - 5)
-
-                if v == "NOTSET":
-                    self.console.print(f" - [yellow]{k}[/] -> [red]{v}[/]")
-                else:
-                    self.console.print(f" - [yellow]{k}[/] -> [green]{v}[/]")
+            self.config_manager.print_config(settings)
 
             return
 

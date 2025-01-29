@@ -51,3 +51,14 @@ class ConfigManager:
 
     def get_config_names(self) -> List[str]:
         return self.configs.keys()
+
+    def print_config(self, name):
+        config = self.get_config(name)
+
+        if config:
+            print(f"Config {name}:")
+            for k, v in config.items():
+                if k == "api_key" and v != "NOTSET":
+                    v = f"{v[:5]}...{v[len(v) - 5 :]}"
+
+                print(f" - {k} -> {v}")

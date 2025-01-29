@@ -40,15 +40,7 @@ def main():
         if args_dict:
             ConfigManager(CONFIG_PATH).save_config(args_dict, args.name)
         else:
-            config = ConfigManager(CONFIG_PATH).get_config(args.name)
-            if not config:
-                print(f"No config named {args.name}")
-            else:
-                print(f"{args.name} config:")
-                for k, v in config.items():
-                    if k == "api_key" and v != "NOTSET":
-                        v = v[:5] + "-" * (len(v) - 5)
-                    print(f" - {k} -> {v}")
+            ConfigManager(CONFIG_PATH).print_config(args.name)
     else:
         ChatCLI(CONFIG_PATH).run()
 

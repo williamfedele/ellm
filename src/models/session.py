@@ -5,10 +5,11 @@ import utils.prompts as prompts
 from models.message import Message
 from dataclasses import asdict
 from datetime import datetime
+from typing import List
 
 
 class Session:
-    def __init__(self, id: str = None):
+    def __init__(self, id: str = ""):
         self.id = id or str(uuid4())
         self.title: str = "Untitled"
         self.branched_from: str = "master"

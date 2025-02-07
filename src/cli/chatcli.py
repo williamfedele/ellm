@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -8,10 +8,11 @@ from models.session import Session
 from utils.constants import HISTORY_PATH
 from config.manager import ConfigManager
 from providers.manager import ProviderManager
+from pathlib import Path
 
 
 class ChatCLI:
-    def __init__(self, config_path):
+    def __init__(self, config_path: Path):
         super().__init__()
 
         self.running = True
@@ -41,7 +42,7 @@ class ChatCLI:
         }
 
         self.multiline_mode = False
-        self.multiline_buffer = []
+        self.multiline_buffer: List[str] = []
 
     def load_sessions(self) -> None:
         if not HISTORY_PATH.exists():
@@ -209,19 +210,15 @@ class ChatCLI:
         # TODO: if this fails due to a bad request, the user message is still added to the history
         # conversations should always alternate between user and assistant
         response = self.provider.send(config, self.current_session.history)
-        full_response = self.stream_response(response)
+        full_response = self.stream_response(response, str(config["api_type"]))
 
         self.current_session.add_message("assistant", full_response)
 
-    def stream_response(self, response) -> str:
+    def stream_response(self, response, api_type: str) -> str:
         "Stream the response from the provider"
 
-        # TODO repeated again
-        settings = self.current_session.settings
-        config = self.config_manager.get_config(settings)
-
         full_response = ""
-        if config["api_type"] == "openai":
+        if api_type == "openai":
             for chunk in response:
                 if chunk.choices:
                     delta = chunk.choices[0].delta
@@ -232,7 +229,7 @@ class ChatCLI:
                     if chunk.choices[0].finish_reason:
                         print()
                         break
-        elif config["api_type"] == "anthropic":
+        elif api_type == "anthropic":
             for chunk in response:
                 if chunk.type == "content_block_delta":
                     content = chunk.delta.text

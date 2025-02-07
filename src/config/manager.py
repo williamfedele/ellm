@@ -1,9 +1,10 @@
 from typing import List, Dict
 import configparser
+from pathlib import Path
 
 
 class ConfigManager:
-    def __init__(self, config_file_path):
+    def __init__(self, config_file_path: Path):
         self.config_file_path = config_file_path
         self.configs: configparser.ConfigParser = self._load_configs()
 
@@ -50,7 +51,7 @@ class ConfigManager:
         return self.configs[name]
 
     def get_config_names(self) -> List[str]:
-        return self.configs.keys()
+        return list(self.configs.keys())
 
     def print_config(self, name):
         config = self.get_config(name)

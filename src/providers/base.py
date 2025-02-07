@@ -8,7 +8,7 @@ from sdk.manager import SDKManager
 class APIProvider(ABC):
     def __init__(self, config: configparser.ConfigParser):
         self.sdk = SDKManager.get_sdk(
-            config["api_type"], config["base_url"], config["api_key"]
+            str(config["api_type"]), str(config["base_url"]), str(config["api_key"])
         )
 
     @abstractmethod

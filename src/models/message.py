@@ -3,7 +3,7 @@ from datetime import datetime
 import tiktoken
 
 
-def count_tokens(text: str) -> str:
+def count_tokens(text: str) -> int:
     encoding = tiktoken.get_encoding("cl100k_base")
     return len(encoding.encode(text))
 
@@ -12,7 +12,7 @@ def count_tokens(text: str) -> str:
 class Message:
     role: str
     content: str
-    timestamp: str = None
+    timestamp: str = ""
     tokens: int = 0
 
     def __post_init__(self):

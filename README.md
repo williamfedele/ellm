@@ -28,13 +28,23 @@ api_type = openai
 max_tokens = 1000
 ```
 
-New conversations use the DEFAULT settings.
+- `base_url`: The endpoint for your provider.
+- `api_key`: Your API key for authentication.
+- `model`: The model to use for the conversation.
+- `api_type`: The type of API (e.g., openai, anthropic).
+- `max_tokens`: The maximum number of tokens for the response.
 
-You can modify any field of the default settings using _DEFAULT_ as name in command below. You can also specify a new name to create a new config to be used on a conversation by conversation basis. This is helpful for optimizing API usage. For example: using Claude Sonnet for coding and Haiku for simpler tasks.
+New conversations automatically use the DEFAULT settings.
+
+You can modify any field of the default settings using `DEFAULT` as the name. You can also create a new config for specific conversations. This helps optimize API usage. For example, using Claude Sonnet for coding and gpt-o3-mini for simpler tasks.
+
 ```shell
 uv run ellm.py config NAME --base-url BASEURL --api-key APIKEY --model MODEL --api-type {openai, anthropic} --max-tokens MAXTOKENS
 ```
-Examples:
+
+Omitting the base URL will use the default from the provider's SDK. Omitting all fields will print the config.
+
+### Examples:
 ```shell
 uv run ellm.py config code --api-key 123abc --model claude-3-5-sonnet-20241022 --api-type anthropic --max-tokens 2048
 ```
@@ -42,9 +52,12 @@ uv run ellm.py config code --api-key 123abc --model claude-3-5-sonnet-20241022 -
 uv run ellm.py config DeepSeekR1 --base-url https://api.deepseek.com --api-key cba321 --model deepseek-reasoner --api-type openai --max-tokens 4096
 ```
 
-Omitting the base url will use the default from the providers SDK.
+Ollama:
 
-Omitting all fields will print that config.
+Ollama has experiment compatibility with the OpenAI API. Make sure Ollama is running on your machine with your model downloaded. Use `https://localhost:11434/v1/` as the base url. The api key is mandatory, but is ignored (you can put anything). Select the model name as it appears in `ollama list`.
+```shell
+uv run ellm.py config ollama --base-url https://localhost:11434/v1/ --api-key ollama --model llama3.2:latest
+```
 
 ## Running
 ```shell
@@ -75,7 +88,6 @@ I'm currently working on this for fun.
 
 ### Plans:
 
-- OpenAI API implementation
 - Ability to pass in code blocks or files
 
 

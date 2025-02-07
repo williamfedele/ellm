@@ -10,7 +10,7 @@
 _Work in progress_
 
 ## Getting Started
-I'm currently using [uv](https://github.com/astral-sh/uv) for package management and execution. It's a great alternative to the mess that is Python's tooling ecosystem.
+This project uses [uv](https://github.com/astral-sh/uv) for package management and execution.
 
 Conversations are stored in `~/.ellm/conversations/{uuid4}.json`
 
@@ -36,32 +36,32 @@ max_tokens = 1000
 
 New conversations automatically use the DEFAULT settings.
 
-You can modify any field of the default settings using `DEFAULT` as the name. You can also create a new config for specific conversations. This helps optimize API usage. For example, using Claude Sonnet for coding and gpt-o3-mini for simpler tasks.
+You can modify any field of the default settings using `DEFAULT` as the name. You can also create a new config for specific conversations. This helps optimize API usage. For example, using Claude Sonnet for coding and gpt-o3-mini for other tasks.
 
 ```shell
-uv run ellm.py config NAME --base-url BASEURL --api-key APIKEY --model MODEL --api-type {openai, anthropic} --max-tokens MAXTOKENS
+uv run ellm config NAME --base-url BASEURL --api-key APIKEY --model MODEL --api-type {openai, anthropic} --max-tokens MAXTOKENS
 ```
 
 Omitting the base URL will use the default from the provider's SDK. Omitting all fields will print the config.
 
 ### Examples:
 ```shell
-uv run ellm.py config code --api-key 123abc --model claude-3-5-sonnet-20241022 --api-type anthropic --max-tokens 2048
+uv run ellm config code --api-key 123abc --model claude-3-5-sonnet-20241022 --api-type anthropic --max-tokens 2048
 ```
 ```shell
-uv run ellm.py config DeepSeekR1 --base-url https://api.deepseek.com --api-key cba321 --model deepseek-reasoner --api-type openai --max-tokens 4096
+uv run ellm config DeepSeekR1 --base-url https://api.deepseek.com --api-key cba321 --model deepseek-reasoner --api-type openai --max-tokens 4096
 ```
 
 Ollama:
 
-Ollama has experiment compatibility with the OpenAI API. Make sure Ollama is running on your machine with your model downloaded. Use `https://localhost:11434/v1/` as the base url. The api key is mandatory, but is ignored (you can put anything). Select the model name as it appears in `ollama list`.
+Ollama has experiment compatibility with the OpenAI API. Make sure Ollama is running on your machine with your model downloaded. Use `http://localhost:11434/v1/` as the base url. The api key is mandatory, but is ignored (you can put anything). Select the model name as it appears in `ollama list`.
 ```shell
-uv run ellm.py config ollama --base-url https://localhost:11434/v1/ --api-key ollama --model llama3.2:latest
+uv run ellm config ollama --base-url http://localhost:11434/v1/ --api-key ollama --model llama3.2:latest
 ```
 
 ## Running
 ```shell
-uv run ellm.py
+uv run ellm
 ```
 
 ### Commands:

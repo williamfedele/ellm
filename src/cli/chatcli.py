@@ -5,10 +5,12 @@ from rich.panel import Panel
 from rich import box
 from rich import print
 from models.session import Session
+from models.message import Message
 from utils.constants import HISTORY_PATH
 from config.manager import ConfigManager
 from providers.manager import ProviderManager
 from pathlib import Path
+import copy
 
 
 class ChatCLI:
@@ -200,23 +202,34 @@ class ChatCLI:
             )
             return
 
-        self.current_session.add_message("user", message)
+        # copy the current session history and add the user message
+        # the history is not modified until a response is received
+        # ensures that the history alternates between user and assistant messages
+        message_history = copy.deepcopy(self.current_session.history)
+        message_history.append(Message(role="user", content=message))
 
         # TODO: don't like having to repeat this to get the config of the current session
         settings = self.current_session.settings
         config = self.config_manager.get_config(settings)
 
         # call LLM
-        # TODO: if this fails due to a bad request, the user message is still added to the history
-        # conversations should always alternate between user and assistant
-        response = self.provider.send(config, self.current_session.history)
+        response = self.provider.send(config, message_history)
+
+        # response can be None if there was an error with the provider
+        # errors might include network errors, invalid API key, etc.
+        if not response:
+            return
+
+        # stream the response. returns the full response as a string
         full_response = self.stream_response(response, str(config["api_type"]))
 
+        # add both user and assistant messages to the history at the same time
+        self.current_session.add_message("user", message)
         self.current_session.add_message("assistant", full_response)
 
     def stream_response(self, response, api_type: str) -> str:
         "Stream the response from the provider"
-
+        print()
         full_response = ""
         if api_type == "openai":
             for chunk in response:
@@ -238,7 +251,7 @@ class ChatCLI:
                 elif chunk.type == "message_stop":
                     print()
                     break
-
+        print()
         return full_response
 
     def history(self, arg):

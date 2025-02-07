@@ -17,7 +17,11 @@ class OpenAIAPI(APIProvider):
         }
 
     def send_request(self, prepared_request):
-        response = self.sdk.chat.completions.create(**prepared_request)
+        try:
+            response = self.sdk.chat.completions.create(**prepared_request)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            response = None
         return response
 
     def send(self, config, messages) -> str:

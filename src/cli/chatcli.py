@@ -209,10 +209,40 @@ class ChatCLI:
         # TODO: if this fails due to a bad request, the user message is still added to the history
         # conversations should always alternate between user and assistant
         response = self.provider.send(config, self.current_session.history)
+        full_response = self.stream_response(response)
 
-        self.console.print(f"\n{response}\n")
+        self.current_session.add_message("assistant", full_response)
 
-        self.current_session.add_message("assistant", response)
+    def stream_response(self, response) -> str:
+        "Stream the response from the provider"
+
+        # TODO repeated again
+        settings = self.current_session.settings
+        config = self.config_manager.get_config(settings)
+
+        full_response = ""
+        if config["api_type"] == "openai":
+            for chunk in response:
+                if chunk.choices:
+                    delta = chunk.choices[0].delta
+                    if delta and delta.content:
+                        content = delta.content
+                        full_response += content
+                        print(content, end="", flush=True)
+                    if chunk.choices[0].finish_reason:
+                        print()
+                        break
+        elif config["api_type"] == "anthropic":
+            for chunk in response:
+                if chunk.type == "content_block_delta":
+                    content = chunk.delta.text
+                    full_response += content
+                    print(content, end="", flush=True)
+                elif chunk.type == "message_stop":
+                    print()
+                    break
+
+        return full_response
 
     def history(self, arg):
         "Show message history for the active session"

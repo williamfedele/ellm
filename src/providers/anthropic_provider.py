@@ -20,11 +20,12 @@ class AnthropicAPI(APIProvider):
             "temperature": 0,
             "messages": stripped_messages,
             "system": system_msg,
+            "stream": True,
         }
 
     def send_request(self, prepared_request) -> str:
         response = self.sdk.messages.create(**prepared_request)
-        return response.content[0].text
+        return response
 
     def send(self, config, messages) -> str:
         """Convenience method to prepare and send in one call"""

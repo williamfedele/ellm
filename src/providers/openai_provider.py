@@ -13,11 +13,12 @@ class OpenAIAPI(APIProvider):
             "max_tokens": int(config["max_tokens"]),
             "temperature": 0,
             "messages": stripped_messages,
+            "stream": True,
         }
 
     def send_request(self, prepared_request):
         response = self.sdk.chat.completions.create(**prepared_request)
-        return response.choices[0].message.content
+        return response
 
     def send(self, config, messages) -> str:
         """Convenience method to prepare and send in one call"""
